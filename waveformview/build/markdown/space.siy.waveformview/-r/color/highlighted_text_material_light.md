@@ -1,0 +1,6 @@
+[space.siy.waveformview](../../index.md) / [R](../index.md) / [color](index.md) / [highlighted_text_material_light](./highlighted_text_material_light.md)
+
+# highlighted_text_material_light
+
+`static var highlighted_text_material_light: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)
+`static var highlighted_text_material_light: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)
