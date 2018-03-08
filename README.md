@@ -92,6 +92,9 @@ The following xml shows all attributes.
         app:peakMode="peakmode_average"
         app:secPerBlock="0.1" />
 ```
+# Document
+
+See [here](https://github.com/SIY1121/WaveFormViewDemo/blob/master/waveformview/build/markdown/space.siy.waveformview/index.md).
 
 # Requirement
 Supports Android 5.0+
