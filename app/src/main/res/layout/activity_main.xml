@@ -11,6 +11,14 @@
         android:id="@+id/waveFormView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:blockColor="@color/white"
+        app:blockColorPlayed="@color/red"
+        app:showTimeText="true"
+        app:textColor="@color/white"
+        app:textBgColor="@color/black"
+        app:blockWidth="10"
+        app:topBlockScale="1"
+        app:bottomBlockScale="0.5"
         app:peakMode="peakmode_average"
         app:secPerBlock="0.1" />
 
@@ -107,7 +115,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="bottomBlockWidth" />
+                    android:text="bottomBlockScale" />
 
                 <SeekBar
                     android:id="@+id/seekBar4"
