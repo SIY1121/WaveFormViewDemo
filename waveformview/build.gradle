@@ -77,3 +77,7 @@ publish {
     desc = 'Provide the view to show audio wave form'
     website = 'https://github.com/SIY1121/WaveFormViewDemo'
 }
+
+tasks.withType(Javadoc).all {
+    enabled = false
+}
