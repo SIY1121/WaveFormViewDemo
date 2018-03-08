@@ -7,7 +7,7 @@ Generating waveforms at runtime, you don't have to prepare data in advance.
 **Note : It takes a few seconds to generate**
 
 # Screenshots
-<img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/images/sample1.png" width="40%"/><img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/images/sample2.png" width="40%" />
+<img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/screenshots/sample1.png" width="40%"/><img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/screenshots/sample2.png" width="40%" />
 
 # Importing the Liblary
 Add the following dependicity to your `build.gradle` file.
