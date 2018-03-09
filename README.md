@@ -9,7 +9,7 @@ Generating waveforms at runtime, you don't have to prepare data in advance.
 # Screenshots
 <img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/screenshots/sample1.png" width="40%"/><img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/screenshots/sample2.png" width="40%" />
 
-# Importing the Liblary
+# Importing the Library
 Add the following dependicity to your `build.gradle` file.
 
 ```
@@ -99,7 +99,7 @@ See [here](https://github.com/SIY1121/WaveFormViewDemo/blob/master/waveformview/
 # Requirement
 Supports Android 5.0+
 
-WaveFormView uses MediaCodec supporting only 5.0 or higher to generate waveform at runtime.
+WaveFormView uses MediaCodec supporting 5.0+ to generate waveform at runtime.
 
 # Lisence
 
