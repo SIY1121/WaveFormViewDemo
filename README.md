@@ -1,4 +1,5 @@
 # WaveFormView
+<img src="https://github.com/SIY1121/WaveFormViewDemo/blob/master/screenshots/wfv.png" width="50%"/>
 
 WaveFormView provides a view to display audio waveforms.
 
