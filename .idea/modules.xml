@@ -5,8 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/WaveFormViewDemo.iml" filepath="$PROJECT_DIR$/.idea/WaveFormViewDemo.iml" />
       <module fileurl="file://$PROJECT_DIR$/WaveFormViewDemo.iml" filepath="$PROJECT_DIR$/WaveFormViewDemo.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/waveformview/waveformview.iml" filepath="$PROJECT_DIR$/waveformview/waveformview.iml" />
       <module fileurl="file://$PROJECT_DIR$/waveformview/waveformview.iml" filepath="$PROJECT_DIR$/waveformview/waveformview.iml" />
     </modules>
   </component>
