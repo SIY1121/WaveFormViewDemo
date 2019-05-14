@@ -2,7 +2,6 @@ package space.siy.waveformview
 
 import android.media.MediaPlayer
 import android.os.Handler
-import android.widget.Toast
 
 class FixedWaveFormPlayer(val filePath: String) {
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
@@ -37,7 +36,7 @@ class FixedWaveFormPlayer(val filePath: String) {
         }
         player?.prepareAsync()
 
-        val fittedWaveFormViewCallback = object : FixedWaveFormView.Callback {
+        wfv?.callback = object : FixedWaveFormView.Callback {
           override fun onPlay() {
             play()
           }
@@ -50,8 +49,6 @@ class FixedWaveFormPlayer(val filePath: String) {
             player?.seekTo(pos.toInt())
           }
         }
-
-        wfv?.callback = fittedWaveFormViewCallback
       } catch (e: Exception) {
         e.printStackTrace()
         this@FixedWaveFormPlayer.callback?.onError()
