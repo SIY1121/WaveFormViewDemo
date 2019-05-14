@@ -29,7 +29,7 @@
       app:blockColor="@android:color/holo_blue_dark"
       app:blockColorPlayed="@android:color/holo_red_dark"
       app:blockWidth="10"
-      app:topBlockScale="1"
+      app:topBlockScale="0.5"
       app:bottomBlockScale="0.5"
       android:layout_marginTop="16dp"
       app:layout_constraintStart_toStartOf="parent"

@@ -144,12 +144,15 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
       val maxAmplitude = resampleData.max()!!
       for (i in 0 until resampleData.size) {
         val x = i.toFloat() * blockWidth
-        val topStartY = if (bottomBlockScale > 0f) height * 0.5f else height.toFloat()
-        val topStopY = topStartY - (topStartY * resampleData[i] / maxAmplitude)
-        canvas.drawLine(x, topStartY, x, topStopY, blockPaint)
+        if (topBlockScale > 0f) {
+          val startY = height * topBlockScale
+          val stopY = startY - (startY * resampleData[i] / maxAmplitude)
+          canvas.drawLine(x, startY, x, stopY, blockPaint)
+        }
         if (bottomBlockScale > 0f) {
-          val bottomStopY = topStartY + (topStartY * resampleData[i] / maxAmplitude)
-          canvas.drawLine(x, topStartY + 2, x, bottomStopY, blockPaint)
+          val startY = (height - height * bottomBlockScale) + SPLIT_GAP
+          val stopY = startY + ((height - startY) * resampleData[i] / maxAmplitude)
+          canvas.drawLine(x, startY, x, stopY, blockPaint)
         }
       }
     }
@@ -234,5 +237,6 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   companion object {
     const val SEEKING_THRESHOLD = 4
     const val TAP_THRESHOLD_TIME = 300L
+    const val SPLIT_GAP = 2
   }
 }
