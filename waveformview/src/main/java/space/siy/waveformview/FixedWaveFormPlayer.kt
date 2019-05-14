@@ -37,7 +37,7 @@ class FixedWaveFormPlayer(val filePath: String) {
               player?.setDataSource(filePath)
               player?.setOnPreparedListener {
                 // Notify complete
-                this@FixedWaveFormPlayer.callback?.onComplete()
+                this@FixedWaveFormPlayer.callback?.onLoadingComplete()
               }
               player?.prepareAsync()
 
@@ -63,15 +63,16 @@ class FixedWaveFormPlayer(val filePath: String) {
           }
 
           override fun onProgress(v: Float) {
-            this@FixedWaveFormPlayer.callback?.onProgress(v)
+            this@FixedWaveFormPlayer.callback?.onLoadingProgress(v)
           }
         })
   }
 
   fun play() {
-    if (player?.isPlaying == false) {
+    if (!isPlaying()) {
       player?.start()
       if (player != null) {
+        callback?.onPlay()
         handler.removeCallbacks(runnable)
         handler.postDelayed(runnable, REFRESH_DELAY_MILLIS)
       }
@@ -79,17 +80,23 @@ class FixedWaveFormPlayer(val filePath: String) {
   }
 
   fun pause() {
-    if (player?.isPlaying == true) {
+    if (isPlaying()) {
       player?.pause()
       if (player != null) {
+        callback?.onPause()
         handler.removeCallbacks(runnable)
       }
     }
   }
 
   fun stop() {
+    player?.pause()
     player?.seekTo(0)
+    waveFormView?.position = 0
+    callback?.onStop()
   }
+
+  fun isPlaying(): Boolean = player?.isPlaying == true
 
   fun dispose() {
     waveFormDataFactory.cancel()
@@ -99,9 +106,12 @@ class FixedWaveFormPlayer(val filePath: String) {
   }
 
   interface Callback {
-    fun onProgress(float: Float)
-    fun onComplete()
+    fun onLoadingProgress(float: Float)
+    fun onLoadingComplete()
     fun onError()
+    fun onPlay()
+    fun onPause()
+    fun onStop()
   }
 
   companion object {

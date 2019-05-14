@@ -4,6 +4,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnPlayPause
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnStop
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView1
@@ -29,10 +31,10 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!)
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
-        override fun onProgress(float: Float) {
+        override fun onLoadingProgress(float: Float) {
         }
 
-        override fun onComplete() {
+        override fun onLoadingComplete() {
           waveFormPlayer1?.play()
           progressBar1.visibility = View.GONE
         }
@@ -40,24 +42,55 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         override fun onError() {
           progressBar1.visibility = View.GONE
         }
+
+        override fun onPlay() {
+        }
+
+        override fun onPause() {
+        }
+
+        override fun onStop() {
+        }
       })
 
       val audioPath2 = getRawResourcePath("audio_sample_amr", "amr")
       waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
-        override fun onProgress(float: Float) {
+        override fun onLoadingProgress(float: Float) {
         }
 
-        override fun onComplete() {
-          waveFormPlayer2?.play()
+        override fun onLoadingComplete() {
           progressBar2.visibility = View.GONE
         }
 
         override fun onError() {
+          btnPlayPause.text = "play"
           progressBar2.visibility = View.GONE
         }
+
+        override fun onPlay() {
+          btnPlayPause.text = "pause"
+        }
+
+        override fun onPause() {
+          btnPlayPause.text = "play"
+        }
+
+        override fun onStop() {
+          btnPlayPause.text = "play"
+        }
       })
+      btnPlayPause.setOnClickListener {
+        if (waveFormPlayer2?.isPlaying() == true) {
+          waveFormPlayer2?.pause()
+        } else {
+          waveFormPlayer2?.play()
+        }
+      }
+      btnStop.setOnClickListener {
+        waveFormPlayer2?.stop()
+      }
     } catch (e: FileNotFoundException) {
       e.printStackTrace()
     } catch (e: IOException) {
