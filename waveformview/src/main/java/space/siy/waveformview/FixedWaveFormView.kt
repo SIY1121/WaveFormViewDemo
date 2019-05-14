@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.floor
@@ -173,7 +174,7 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
         if (seeking) {
           if (!paused) {
             paused = true
-            callback?.onPause()
+            callback?.onSeekStarted()
           }
           seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
         }
@@ -190,7 +191,8 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
 
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
             paused = false
-            callback?.onPlay()
+            Log.d("FixedFormView", "Paused: $paused")
+            callback?.onTap()
           }
         }
       }
@@ -221,11 +223,14 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
    */
   interface Callback {
     /**
-     * Called when view clicked
+     * Called when view tapped
      */
-    fun onPlay()
+    fun onTap()
 
-    fun onPause()
+    /**
+     * Called when gestures detects as an attempt to seek
+     */
+    fun onSeekStarted()
 
     /**
      * Called when seek complete

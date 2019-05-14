@@ -37,11 +37,15 @@ class FixedWaveFormPlayer(val filePath: String) {
         player?.prepareAsync()
 
         wfv?.callback = object : FixedWaveFormView.Callback {
-          override fun onPlay() {
-            play()
+          override fun onTap() {
+            if (player?.isPlaying == true) {
+              pause()
+            } else {
+              play()
+            }
           }
 
-          override fun onPause() {
+          override fun onSeekStarted() {
             pause()
           }
 
