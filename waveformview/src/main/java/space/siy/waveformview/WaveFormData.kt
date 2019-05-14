@@ -10,8 +10,8 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Parcel
 import android.os.Parcelable
-import android.support.annotation.RequiresApi
 import android.util.Log
+import androidx.annotation.RequiresApi
 import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
 import java.nio.ByteBuffer

@@ -3,9 +3,9 @@ package space.siy.waveformviewdemo
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
-import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.SeekBar
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import space.siy.waveformview.WaveFormData
 import space.siy.waveformview.WaveFormView
