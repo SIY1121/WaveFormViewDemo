@@ -9,7 +9,7 @@
     >
 
   <space.siy.waveformview.FittedWaveFormView
-      android:id="@+id/waveView_1"
+      android:id="@+id/waveFormView1"
       android:layout_width="match_parent"
       android:layout_height="100dp"
       app:blockColor="@android:color/holo_blue_dark"
@@ -22,8 +22,18 @@
       app:layout_constraintTop_toTopOf="parent"
       android:background="@color/colorPrimary"/>
 
+  <ProgressBar
+      android:id="@+id/progressBar1"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintStart_toStartOf="@id/waveFormView1"
+      app:layout_constraintEnd_toEndOf="@id/waveFormView1"
+      app:layout_constraintTop_toTopOf="@id/waveFormView1"
+      app:layout_constraintBottom_toBottomOf="@id/waveFormView1"
+      />
+
   <space.siy.waveformview.FittedWaveFormView
-      android:id="@+id/waveView_2"
+      android:id="@+id/waveFormView2"
       android:layout_width="200dp"
       android:layout_height="50dp"
       app:blockColor="@android:color/holo_blue_dark"
@@ -34,7 +44,18 @@
       android:layout_marginTop="16dp"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintTop_toBottomOf="@id/waveView_1"
+      app:layout_constraintTop_toBottomOf="@id/waveFormView1"
       android:background="@color/colorPrimary"/>
+
+  <ProgressBar
+      android:id="@+id/progressBar2"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintStart_toStartOf="@id/waveFormView2"
+      app:layout_constraintEnd_toEndOf="@id/waveFormView2"
+      app:layout_constraintTop_toTopOf="@id/waveFormView2"
+      app:layout_constraintBottom_toBottomOf="@id/waveFormView2"
+      style="?android:attr/progressBarStyleSmall"
+      />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

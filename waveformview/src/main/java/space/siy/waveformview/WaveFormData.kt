@@ -12,6 +12,12 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
 import java.nio.ByteBuffer
@@ -44,7 +50,6 @@ import java.nio.ByteOrder
  * @property samples Raw sample data
  */
 class WaveFormData private constructor(val sampleRate: Int, val channel: Int, val duration: Long, var samples: ShortArray = ShortArray(0)) : Parcelable {
-
     private constructor(sampleRate: Int, channel: Int, duration: Long, stream: ByteArrayOutputStream) : this(sampleRate, channel, duration) {
         samples = stream.toShortArray()
     }
@@ -203,7 +208,6 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
          * @param callback callback to report progress and pass built data
          */
         fun build(callback: Callback) {
-            val handler = Handler()
             val format = extractor.getTrackFormat(audioTrackIndex)
             val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
             codec.configure(format, null, null, 0)
@@ -215,11 +219,10 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
             codec.start()
             Log.i("WaveFormFactory", "Start building data.")
 
-
-            Thread({
+            CoroutineScope(Dispatchers.IO).launch {
                 var EOS = false
                 val stream = ByteArrayOutputStream()
-                var info = MediaCodec.BufferInfo()
+                val info = MediaCodec.BufferInfo()
 
                 while (!EOS) {
                     val inputBufferId = codec.dequeueInputBuffer(10)
@@ -237,7 +240,9 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                         outputBuffer.get(buffer)
                         stream.write(buffer)
                         codec.releaseOutputBuffer(outputBufferId, false)
-                        callback.onProgress(stream.size() / estimateSize * 100)
+                        withContext(Dispatchers.Main) {
+                            callback.onProgress(stream.size() / estimateSize * 100)
+                        }
                         if (info.flags == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
                             EOS = true
                         }
@@ -247,10 +252,10 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                 codec.release()
                 Log.i("WaveFormFactory", "Built data in " + (System.currentTimeMillis() - startTime) + "ms")
                 val data = WaveFormData(outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE), outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT), extractor.getTrackFormat(audioTrackIndex).getLong(MediaFormat.KEY_DURATION) / 1000, stream)
-                handler.post({
+                withContext(Dispatchers.Main) {
                     callback.onComplete(data)
-                })
-            }).start()
+                }
+            }
         }
     }
 

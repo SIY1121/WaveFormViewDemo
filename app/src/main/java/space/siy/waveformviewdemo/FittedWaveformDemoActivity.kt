@@ -5,7 +5,12 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView1
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView2
 import space.siy.waveformview.FittedWaveFormView
 import space.siy.waveformview.WaveFormData
 import java.io.File
@@ -30,13 +35,14 @@ class FittedWaveformDemoActivity : AppCompatActivity() {
           .build(
               object : WaveFormData.Factory.Callback {
                 override fun onComplete(waveFormData: WaveFormData) {
-                  val waveFormView_1 = findViewById<FittedWaveFormView>(R.id.waveView_1)
-                  waveFormView_1.data = waveFormData
-                  waveFormView_1.position = 0
+                  progressBar1.visibility = View.GONE
+                  progressBar2.visibility = View.GONE
 
-                  val waveFormView_2 = findViewById<FittedWaveFormView>(R.id.waveView_2)
-                  waveFormView_2.data = waveFormData
-                  waveFormView_2.position = 0
+                  waveFormView1.data = waveFormData
+                  waveFormView1.position = 0
+
+                  waveFormView2.data = waveFormData
+                  waveFormView2.position = 0
 
                   // Initialize MediaPlayer
                   try {
@@ -47,8 +53,8 @@ class FittedWaveformDemoActivity : AppCompatActivity() {
                     val runnable = object : Runnable {
                       override fun run() {
                         val currentPosition = player.currentPosition.toLong()
-                        waveFormView_1.position = currentPosition
-                        waveFormView_2.position = currentPosition
+                        waveFormView1.position = currentPosition
+                        waveFormView2.position = currentPosition
                         if (player.isPlaying) {
                           handler.postDelayed(this, delayMillis)
                         }
@@ -82,8 +88,8 @@ class FittedWaveformDemoActivity : AppCompatActivity() {
                       }
                     }
 
-                    waveFormView_1.callback = callback
-                    waveFormView_2.callback = callback
+                    waveFormView1.callback = callback
+                    waveFormView2.callback = callback
 
                   } catch (e: IOException) {
                     e.printStackTrace()
