@@ -39,7 +39,7 @@ class FixedWaveFormPlayer(val filePath: String) {
                 // Notify complete
                 this@FixedWaveFormPlayer.callback?.onComplete()
               }
-              player?.prepare()
+              player?.prepareAsync()
 
               val fittedWaveFormViewCallback = object : FixedWaveFormView.Callback {
                 override fun onPlay() {
