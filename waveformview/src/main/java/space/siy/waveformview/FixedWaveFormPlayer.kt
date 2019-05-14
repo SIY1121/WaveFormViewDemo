@@ -2,6 +2,7 @@ package space.siy.waveformview
 
 import android.media.MediaPlayer
 import android.os.Handler
+import android.widget.Toast
 
 class FixedWaveFormPlayer(val filePath: String) {
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
@@ -20,52 +21,52 @@ class FixedWaveFormPlayer(val filePath: String) {
     }
   }
 
+  private val factoryCallback = object : WaveFormData.Factory.Callback {
+    override fun onComplete(waveFormData: WaveFormData) {
+      val wfv = this@FixedWaveFormPlayer.waveFormView
+      wfv?.data = waveFormData
+      wfv?.position = 0
+
+      // Initialize MediaPlayer
+      try {
+        player = MediaPlayer()
+        player?.setDataSource(filePath)
+        player?.setOnPreparedListener {
+          // Notify complete
+          this@FixedWaveFormPlayer.callback?.onLoadingComplete()
+        }
+        player?.prepareAsync()
+
+        val fittedWaveFormViewCallback = object : FixedWaveFormView.Callback {
+          override fun onPlay() {
+            play()
+          }
+
+          override fun onPause() {
+            pause()
+          }
+
+          override fun onSeek(pos: Long) {
+            player?.seekTo(pos.toInt())
+          }
+        }
+
+        wfv?.callback = fittedWaveFormViewCallback
+      } catch (e: Exception) {
+        e.printStackTrace()
+        this@FixedWaveFormPlayer.callback?.onError()
+      }
+    }
+
+    override fun onProgress(v: Float) {
+      this@FixedWaveFormPlayer.callback?.onLoadingProgress(v)
+    }
+  }
+
   fun loadInto(waveFormView: FixedWaveFormView, callback: Callback) {
     this.waveFormView = waveFormView
     this.callback = callback
-
-    waveFormDataFactory.build(
-        object : WaveFormData.Factory.Callback {
-          override fun onComplete(waveFormData: WaveFormData) {
-            val wfv = this@FixedWaveFormPlayer.waveFormView
-            wfv?.data = waveFormData
-            wfv?.position = 0
-
-            // Initialize MediaPlayer
-            try {
-              player = MediaPlayer()
-              player?.setDataSource(filePath)
-              player?.setOnPreparedListener {
-                // Notify complete
-                this@FixedWaveFormPlayer.callback?.onLoadingComplete()
-              }
-              player?.prepareAsync()
-
-              val fittedWaveFormViewCallback = object : FixedWaveFormView.Callback {
-                override fun onPlay() {
-                  play()
-                }
-
-                override fun onPause() {
-                  pause()
-                }
-
-                override fun onSeek(pos: Long) {
-                  player?.seekTo(pos.toInt())
-                }
-              }
-
-              wfv?.callback = fittedWaveFormViewCallback
-            } catch (e: Exception) {
-              e.printStackTrace()
-              this@FixedWaveFormPlayer.callback?.onError()
-            }
-          }
-
-          override fun onProgress(v: Float) {
-            this@FixedWaveFormPlayer.callback?.onLoadingProgress(v)
-          }
-        })
+    waveFormDataFactory.build(factoryCallback)
   }
 
   fun play() {

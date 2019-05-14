@@ -211,7 +211,6 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
          * @param callback callback to report progress and pass built data
          */
         fun build(callback: Callback) {
-            val weakCallback = WeakReference(callback)
             val format = extractor.getTrackFormat(audioTrackIndex)
             val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
             codec.configure(format, null, null, 0)
@@ -245,7 +244,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                         stream.write(buffer)
                         codec.releaseOutputBuffer(outputBufferId, false)
                         withContext(Dispatchers.Main) {
-                            weakCallback.get()?.onProgress(stream.size() / estimateSize * 100)
+                            callback.onProgress(stream.size() / estimateSize * 100)
                         }
                         if (info.flags == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
                             EOS = true
@@ -257,7 +256,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                 Log.i("WaveFormFactory", "Built data in " + (System.currentTimeMillis() - startTime) + "ms")
                 val data = WaveFormData(outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE), outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT), extractor.getTrackFormat(audioTrackIndex).getLong(MediaFormat.KEY_DURATION) / 1000, stream)
                 withContext(Dispatchers.Main) {
-                    weakCallback.get()?.onComplete(data)
+                    callback.onComplete(data)
                 }
             }
         }
