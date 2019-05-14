@@ -1,30 +1,24 @@
 package space.siy.waveformviewdemo
 
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView2
-import space.siy.waveformview.FittedWaveFormPlayer
-import space.siy.waveformview.FittedWaveFormPlayer.Callback
-import space.siy.waveformview.FittedWaveFormView
-import space.siy.waveformview.WaveFormData
+import space.siy.waveformview.FixedWaveFormPlayer
+import space.siy.waveformview.FixedWaveFormPlayer.Callback
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 
-class FittedWaveformDemoActivity : AppCompatActivity() {
+class FixedWaveformDemoActivity : AppCompatActivity() {
 
-  private var waveFormPlayer1: FittedWaveFormPlayer? = null
-  private var waveFormPlayer2: FittedWaveFormPlayer? = null
+  private var waveFormPlayer1: FixedWaveFormPlayer? = null
+  private var waveFormPlayer2: FixedWaveFormPlayer? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -32,7 +26,7 @@ class FittedWaveformDemoActivity : AppCompatActivity() {
 
     try {
       val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer1 = FittedWaveFormPlayer(audioPath1!!)
+      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!)
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
         override fun onProgress(float: Float) {
@@ -49,7 +43,7 @@ class FittedWaveformDemoActivity : AppCompatActivity() {
       })
 
       val audioPath2 = getRawResourcePath("audio_sample_amr", "amr")
-      waveFormPlayer2 = FittedWaveFormPlayer(audioPath2!!)
+      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
         override fun onProgress(float: Float) {

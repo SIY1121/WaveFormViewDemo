@@ -22,7 +22,7 @@
         <attr name="textBgColor" format="color" />
     </declare-styleable>
 
-    <declare-styleable name="FittedWaveFormView">
+    <declare-styleable name="FixedWaveFormView">
         <attr name="blockWidth"/>
         <attr name="topBlockScale"/>
         <attr name="bottomBlockScale"/>

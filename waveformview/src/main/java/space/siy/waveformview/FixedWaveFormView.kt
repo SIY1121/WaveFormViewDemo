@@ -30,14 +30,14 @@ import kotlin.math.floor
  * You have to build [WaveFormData] first using [WaveFormData.Factory]
  *
  */
-class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int) : View(context, attr, defStyleAttr) {
+class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int) : View(context, attr, defStyleAttr) {
   constructor(context: Context) : this(context, null, 0)
   constructor(context: Context, attr: AttributeSet) : this(context, attr, 0)
 
   /**
    * Used to retrieve the values defined in the layout XML
    */
-  private val lp = context.obtainStyledAttributes(attr, R.styleable.FittedWaveFormView, defStyleAttr, 0)
+  private val lp = context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
 
   /**
    * WaveFormData show in view
@@ -70,7 +70,7 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Width each block
    */
-  var blockWidth = lp.getFloat(R.styleable.FittedWaveFormView_blockWidth, 10f)
+  var blockWidth = lp.getFloat(R.styleable.FixedWaveFormView_blockWidth, 10f)
     set(value) {
       field = value
       blockPaint.strokeWidth = blockWidth - 2
@@ -83,16 +83,16 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Scale of top blocks
    */
-  var topBlockScale = lp.getFloat(R.styleable.FittedWaveFormView_topBlockScale, 1f)
+  var topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
   /**
    * Scale of bottom blocks
    */
-  var bottomBlockScale = lp.getFloat(R.styleable.FittedWaveFormView_bottomBlockScale, 0f)
+  var bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
 
   /**
    * Color used in played blocks
    */
-  var blockColorPlayed: Int = lp.getColor(R.styleable.FittedWaveFormView_blockColorPlayed, Color.RED)
+  var blockColorPlayed: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
@@ -102,7 +102,7 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Color used in blocks default
    */
-  var blockColor: Int = lp.getColor(R.styleable.FittedWaveFormView_blockColor, Color.WHITE)
+  var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)

@@ -2,16 +2,11 @@ package space.siy.waveformview
 
 import android.media.MediaPlayer
 import android.os.Handler
-import android.util.Log
-import android.view.View
-import java.io.FileDescriptor
-import java.io.IOException
-import java.lang.ref.WeakReference
 
-class FittedWaveFormPlayer(val filePath: String) {
+class FixedWaveFormPlayer(val filePath: String) {
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
   private val handler = Handler()
-  private var waveFormView: FittedWaveFormView? = null
+  private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
 
@@ -25,14 +20,14 @@ class FittedWaveFormPlayer(val filePath: String) {
     }
   }
 
-  fun loadInto(waveFormView: FittedWaveFormView, callback: Callback) {
+  fun loadInto(waveFormView: FixedWaveFormView, callback: Callback) {
     this.waveFormView = waveFormView
     this.callback = callback
 
     waveFormDataFactory.build(
         object : WaveFormData.Factory.Callback {
           override fun onComplete(waveFormData: WaveFormData) {
-            val wfv = this@FittedWaveFormPlayer.waveFormView
+            val wfv = this@FixedWaveFormPlayer.waveFormView
             wfv?.data = waveFormData
             wfv?.position = 0
 
@@ -42,11 +37,11 @@ class FittedWaveFormPlayer(val filePath: String) {
               player?.setDataSource(filePath)
               player?.setOnPreparedListener {
                 // Notify complete
-                this@FittedWaveFormPlayer.callback?.onComplete()
+                this@FixedWaveFormPlayer.callback?.onComplete()
               }
               player?.prepare()
 
-              val fittedWaveFormViewCallback = object : FittedWaveFormView.Callback {
+              val fittedWaveFormViewCallback = object : FixedWaveFormView.Callback {
                 override fun onPlay() {
                   play()
                 }
@@ -63,12 +58,12 @@ class FittedWaveFormPlayer(val filePath: String) {
               wfv?.callback = fittedWaveFormViewCallback
             } catch (e: Exception) {
               e.printStackTrace()
-              this@FittedWaveFormPlayer.callback?.onError()
+              this@FixedWaveFormPlayer.callback?.onError()
             }
           }
 
           override fun onProgress(v: Float) {
-            this@FittedWaveFormPlayer.callback?.onProgress(v)
+            this@FixedWaveFormPlayer.callback?.onProgress(v)
           }
         })
   }
