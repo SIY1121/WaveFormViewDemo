@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="blockWidth" format="float"/>
+    <attr name="topBlockScale" format="float"/>
+    <attr name="bottomBlockScale" format="float"/>
+    <attr name="blockColor" format="color" />
+    <attr name="blockColorPlayed" format="color" />
+
     <declare-styleable name="WaveFormView">
         <attr name="peakMode" format="integer">
             <enum name="peakmode_average" value="0"/>
             <enum name="peakmode_max" value="1"/>
         </attr>
         <attr name="secPerBlock" format="float"/>
-        <attr name="blockWidth" format="float"/>
-        <attr name="topBlockScale" format="float"/>
-        <attr name="bottomBlockScale" format="float"/>
+        <attr name="blockWidth"/>
+        <attr name="topBlockScale"/>
+        <attr name="bottomBlockScale"/>
+        <attr name="blockColor"/>
+        <attr name="blockColorPlayed"/>
         <attr name="showTimeText" format="boolean"/>
-        <attr name="blockColor" format="color" />
-        <attr name="blockColorPlayed" format="color" />
         <attr name="textColor" format="color" />
         <attr name="textBgColor" format="color" />
+    </declare-styleable>
+
+    <declare-styleable name="FittedWaveFormView">
+        <attr name="blockWidth"/>
+        <attr name="topBlockScale"/>
+        <attr name="bottomBlockScale"/>
+        <attr name="blockColor"/>
+        <attr name="blockColorPlayed"/>
     </declare-styleable>
 
 </resources>

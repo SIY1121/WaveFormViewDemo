@@ -3,8 +3,6 @@ package space.siy.waveformview
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
-import android.support.v4.media.session.MediaControllerCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -39,18 +37,7 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Used to retrieve the values defined in the layout XML
    */
-  private val lp = context.obtainStyledAttributes(attr, R.styleable.WaveFormView, defStyleAttr, 0)
-
-  companion object {
-    /**
-     * Flag to use average in specific range
-     */
-    const val PEAKMODE_AVERAGE = 0
-    /**
-     * Flag to use the maximum value in specific range
-     */
-    const val PEAKMODE_MAX = 1
-  }
+  private val lp = context.obtainStyledAttributes(attr, R.styleable.FittedWaveFormView, defStyleAttr, 0)
 
   /**
    * WaveFormData show in view
@@ -70,17 +57,6 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
     }
 
   /**
-   * Method to detect blocks height
-   *
-   * Use [PEAKMODE_AVERAGE] or [PEAKMODE_MAX]
-   */
-  var peakMode = lp.getInteger(R.styleable.WaveFormView_peakMode, PEAKMODE_AVERAGE)
-    set(value) {
-      field = value
-      data = data
-    }
-
-  /**
    * position in milliseconds
    */
   var position: Long = 0
@@ -92,20 +68,9 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
     }
 
   /**
-   * Duration which a block represent
-   *
-   *
-   */
-  var secPerBlock = lp.getFloat(R.styleable.WaveFormView_secPerBlock, 0.5f)
-    set(value) {
-      field = value
-      data = data
-    }
-
-  /**
    * Width each block
    */
-  var blockWidth = lp.getFloat(R.styleable.WaveFormView_blockWidth, 10f)
+  var blockWidth = lp.getFloat(R.styleable.FittedWaveFormView_blockWidth, 10f)
     set(value) {
       field = value
       blockPaint.strokeWidth = blockWidth - 2
@@ -118,21 +83,16 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Scale of top blocks
    */
-  var topBlockScale = lp.getFloat(R.styleable.WaveFormView_topBlockScale, 1f)
+  var topBlockScale = lp.getFloat(R.styleable.FittedWaveFormView_topBlockScale, 1f)
   /**
    * Scale of bottom blocks
    */
-  var bottomBlockScale = lp.getFloat(R.styleable.WaveFormView_bottomBlockScale, 0.5f)
-
-  /**
-   * If you want to hide, set false
-   */
-  var showTimeText = lp.getBoolean(R.styleable.WaveFormView_showTimeText, true)
+  var bottomBlockScale = lp.getFloat(R.styleable.FittedWaveFormView_bottomBlockScale, 0f)
 
   /**
    * Color used in played blocks
    */
-  var blockColorPlayed: Int = lp.getColor(R.styleable.WaveFormView_blockColorPlayed, Color.RED)
+  var blockColorPlayed: Int = lp.getColor(R.styleable.FittedWaveFormView_blockColorPlayed, Color.RED)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
@@ -142,49 +102,12 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   /**
    * Color used in blocks default
    */
-  var blockColor: Int = lp.getColor(R.styleable.WaveFormView_blockColor, Color.WHITE)
+  var blockColor: Int = lp.getColor(R.styleable.FittedWaveFormView_blockColor, Color.WHITE)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
       blockPaint.shader = barShader
     }
-
-  /**
-   * Color used in the text
-   */
-  var textColor: Int = lp.getColor(R.styleable.WaveFormView_textColor, Color.WHITE)
-    set(value) {
-      field = value
-      textPaint.color = value
-    }
-
-  /**
-   * Color used in the text background
-   */
-  var textBgColor: Int = lp.getColor(R.styleable.WaveFormView_textBgColor, 0xAA000000.toInt())
-    set(value) {
-      field = value
-      textBgPaint.color = value
-    }
-  /**
-   *You can set a MediaController
-   * It enables to automate media control and setting position
-   */
-  var controller: MediaControllerCompat? = null
-    set(value) {
-      if (value == null && field != null) {
-        field?.unregisterCallback(mediaControllerCallback)
-      }
-      field = value
-      if (value == null) return
-      value.registerCallback(mediaControllerCallback)
-    }
-
-  private val mediaControllerCallback = object : MediaControllerCompat.Callback() {
-    override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-      position = state?.position ?: 0L
-    }
-  }
 
   /**
    * The resampled data to show
@@ -194,8 +117,6 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   private var resampleData = FloatArray(0)
 
   private val blockPaint = Paint()
-  private val textPaint = Paint()
-  private val textBgPaint = Paint()
 
   private var offsetX = 0f
   private var canvasWidth = 0
@@ -207,26 +128,11 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
   init {
     blockPaint.strokeWidth = blockWidth - 2
     blockPaint.shader = barShader
-
-    textPaint.color = textColor
-    textPaint.style = Paint.Style.FILL_AND_STROKE
-    textPaint.textSize = 40f
-    textPaint.textAlign = Paint.Align.CENTER
-    textPaint.isAntiAlias = true
-
-    textBgPaint.color = textBgColor
   }
 
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
-
-    //When canvas size changed, initialize block paint shader
-    if (canvasWidth != width) {
-      canvasWidth = width
-      barShader = LinearGradient(99f, 0f, 100f, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
-      blockPaint.shader = barShader
-    }
 
     offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
     // Right now, I don't have any better way than allocating shader in every invalidate() invocation
@@ -238,18 +144,18 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
       val maxAmplitude = resampleData.max()!!
       for (i in 0 until resampleData.size) {
         val x = i.toFloat() * blockWidth
-        val startY = height.toFloat() //height / 2f
-        val stopY = height.toFloat() - (height.toFloat() * resampleData[i] / maxAmplitude)
-        canvas.drawLine(x, startY, x, stopY, blockPaint)
-        //canvas.drawLine(x, canvas.height / 2f + 2, x, canvas.height / 2f + (resampleData[i] / Short.MAX_VALUE) * canvas.height / 2 * bottomBlockScale, blockPaint)
+        val topStartY = if (bottomBlockScale > 0f) height * 0.5f else height.toFloat()
+        val topStopY = topStartY - (topStartY * resampleData[i] / maxAmplitude)
+        canvas.drawLine(x, topStartY, x, topStopY, blockPaint)
+        if (bottomBlockScale > 0f) {
+          val bottomStopY = topStartY + (topStartY * resampleData[i] / maxAmplitude)
+          canvas.drawLine(x, topStartY + 2, x, bottomStopY, blockPaint)
+        }
       }
     }
 
     donePlaying = offsetX.toInt() == 100
   }
-
-  val SEEKING_THRESHOLD = 4
-  val TAP_THRESHOLD_TIME = 300L
 
   var lastTapTime = 0L
   var paused = false
@@ -276,14 +182,8 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
 
           seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
           callback?.onSeek(seekingPosition)
-          controller?.transportControls?.seekTo(seekingPosition)
         } else {
           seekingCount = 0
-
-          if (controller?.playbackState?.playbackState == PlaybackStateCompat.STATE_PLAYING)
-            controller?.transportControls?.pause()
-          else
-            controller?.transportControls?.play()
 
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
             paused = false
@@ -307,38 +207,11 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
     return sum.toFloat() / (end - start)
   }
 
-  /**
-   * Extension Method to detect maximum value in specific range
-   */
-  private fun ShortArray.max(start: Int, end: Int): Float {
-    var max = 0f
-    for (i in start until end)
-      if (max < this[i].toFloat())
-        max = this[i].toFloat()
-
-    return max
-  }
-
-  /**
-   * Temporary value to calculate swipe distance
-   */
-  private var ox = 0f
-  /**
-   * Temporary value holding the old offset
-   */
-  private var oox = 0f
-
   private var seeking = false
   /**
    * Count up ACTION_MOVE event
    */
   private var seekingCount = 0
-
-  private fun Long.toTimeText(): String {
-    val mm = (this / 1000 / 60).toString()
-    val ss = (this / 1000 % 60).toString()
-    return mm + ":" + if (ss.length == 2) ss else "0$ss"
-  }
 
   /**
    * It provide a simple callback to sync your MediaPlayer
@@ -356,5 +229,10 @@ class FittedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: In
      * @param pos Position in milliseconds
      */
     fun onSeek(pos: Long)
+  }
+
+  companion object {
+    const val SEEKING_THRESHOLD = 4
+    const val TAP_THRESHOLD_TIME = 300L
   }
 }
