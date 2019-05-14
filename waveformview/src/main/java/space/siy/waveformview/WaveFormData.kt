@@ -14,12 +14,14 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
+import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -89,6 +91,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
 
         private val extractor = MediaExtractor()
         private var audioTrackIndex = -1
+        var dataLoadingJob: Job? = null
 
         private constructor()
 
@@ -208,6 +211,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
          * @param callback callback to report progress and pass built data
          */
         fun build(callback: Callback) {
+            val weakCallback = WeakReference(callback)
             val format = extractor.getTrackFormat(audioTrackIndex)
             val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
             codec.configure(format, null, null, 0)
@@ -219,7 +223,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
             codec.start()
             Log.i("WaveFormFactory", "Start building data.")
 
-            CoroutineScope(Dispatchers.IO).launch {
+            dataLoadingJob = CoroutineScope(Dispatchers.IO).launch {
                 var EOS = false
                 val stream = ByteArrayOutputStream()
                 val info = MediaCodec.BufferInfo()
@@ -241,7 +245,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                         stream.write(buffer)
                         codec.releaseOutputBuffer(outputBufferId, false)
                         withContext(Dispatchers.Main) {
-                            callback.onProgress(stream.size() / estimateSize * 100)
+                            weakCallback.get()?.onProgress(stream.size() / estimateSize * 100)
                         }
                         if (info.flags == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
                             EOS = true
@@ -253,9 +257,13 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                 Log.i("WaveFormFactory", "Built data in " + (System.currentTimeMillis() - startTime) + "ms")
                 val data = WaveFormData(outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE), outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT), extractor.getTrackFormat(audioTrackIndex).getLong(MediaFormat.KEY_DURATION) / 1000, stream)
                 withContext(Dispatchers.Main) {
-                    callback.onComplete(data)
+                    weakCallback.get()?.onComplete(data)
                 }
             }
+        }
+
+        fun cancel() {
+            dataLoadingJob?.cancel()
         }
     }
 
@@ -284,5 +292,4 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
             return arrayOfNulls(size)
         }
     }
-
 }

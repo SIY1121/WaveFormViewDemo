@@ -11,6 +11,8 @@ import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView2
+import space.siy.waveformview.FittedWaveFormPlayer
+import space.siy.waveformview.FittedWaveFormPlayer.Callback
 import space.siy.waveformview.FittedWaveFormView
 import space.siy.waveformview.WaveFormData
 import java.io.File
@@ -21,93 +23,58 @@ import java.io.IOException
 
 class FittedWaveformDemoActivity : AppCompatActivity() {
 
-  internal var handler = Handler()
-  internal var delayMillis = 20L
+  private var waveFormPlayer1: FittedWaveFormPlayer? = null
+  private var waveFormPlayer2: FittedWaveFormPlayer? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_fitted_waveform_demo)
 
-    val audioPath = getRawResourcePath("audio_sample_mp3", "mp3")
     try {
-      val fd = FileInputStream(audioPath!!).fd
-      WaveFormData.Factory(fd)
-          .build(
-              object : WaveFormData.Factory.Callback {
-                override fun onComplete(waveFormData: WaveFormData) {
-                  progressBar1.visibility = View.GONE
-                  progressBar2.visibility = View.GONE
+      val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
+      waveFormPlayer1 = FittedWaveFormPlayer(audioPath1!!)
+      progressBar1.visibility = View.VISIBLE
+      waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
+        override fun onProgress(float: Float) {
+        }
 
-                  waveFormView1.data = waveFormData
-                  waveFormView1.position = 0
+        override fun onComplete() {
+          waveFormPlayer1?.play()
+          progressBar1.visibility = View.GONE
+        }
 
-                  waveFormView2.data = waveFormData
-                  waveFormView2.position = 0
+        override fun onError() {
+          progressBar1.visibility = View.GONE
+        }
+      })
 
-                  // Initialize MediaPlayer
-                  try {
-                    val player = MediaPlayer()
-                    player.setDataSource(audioPath)
-                    player.prepare()
+      val audioPath2 = getRawResourcePath("audio_sample_amr", "amr")
+      waveFormPlayer2 = FittedWaveFormPlayer(audioPath2!!)
+      progressBar2.visibility = View.VISIBLE
+      waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
+        override fun onProgress(float: Float) {
+        }
 
-                    val runnable = object : Runnable {
-                      override fun run() {
-                        val currentPosition = player.currentPosition.toLong()
-                        waveFormView1.position = currentPosition
-                        waveFormView2.position = currentPosition
-                        if (player.isPlaying) {
-                          handler.postDelayed(this, delayMillis)
-                        }
-                      }
-                    }
+        override fun onComplete() {
+          waveFormPlayer2?.play()
+          progressBar2.visibility = View.GONE
+        }
 
-                    player.setOnPreparedListener {
-                      //You have to notify current position to the view
-                      player.start()
-                      handler.postDelayed(runnable, delayMillis)
-                    }
-
-                    val callback = object : FittedWaveFormView.Callback {
-                      override fun onPlay() {
-                        if (!player.isPlaying) {
-                          player.start()
-                          handler.removeCallbacks(runnable)
-                          handler.postDelayed(runnable, delayMillis)
-                        }
-                      }
-
-                      override fun onPause() {
-                        if (player.isPlaying) {
-                          player.pause()
-                          handler.removeCallbacks(runnable)
-                        }
-                      }
-
-                      override fun onSeek(pos: Long) {
-                        player.seekTo(pos.toInt())
-                      }
-                    }
-
-                    waveFormView1.callback = callback
-                    waveFormView2.callback = callback
-
-                  } catch (e: IOException) {
-                    e.printStackTrace()
-                  }
-
-                }
-
-                override fun onProgress(v: Float) {
-                  Log.d("MainActivity", "Progress: $v")
-                  //progressBar.progress = (progress*10).toInt()
-                }
-              })
+        override fun onError() {
+          progressBar2.visibility = View.GONE
+        }
+      })
     } catch (e: FileNotFoundException) {
       e.printStackTrace()
     } catch (e: IOException) {
       e.printStackTrace()
     }
+  }
 
+  override fun onDestroy() {
+    super.onDestroy()
+    waveFormPlayer1?.dispose()
+    waveFormPlayer2?.dispose()
   }
 
   private fun getRawResourcePath(
