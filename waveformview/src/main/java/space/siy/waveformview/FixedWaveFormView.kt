@@ -191,17 +191,15 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
         }
       }
       MotionEvent.ACTION_UP -> {
+        seekingCount = 0
+        paused = false
+
         if (seeking) {
           seeking = false
-          seekingCount = 0
-
           seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
           callback?.onSeek(seekingPosition)
         } else {
-          seekingCount = 0
-
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
-            paused = false
             callback?.onTap()
           }
         }

@@ -50,7 +50,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         }
       })
 
-      val audioPath2 = getRawResourcePath("audio_sample_webm", "webm")
+      val audioPath2 = getRawResourcePath("audio_sample_ogg", "ogg")
       waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {

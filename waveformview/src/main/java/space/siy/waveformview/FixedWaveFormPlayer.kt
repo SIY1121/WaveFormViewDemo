@@ -72,6 +72,7 @@ class FixedWaveFormPlayer(val filePath: String) {
     if (!isPlaying()) {
       player?.start()
       if (player != null) {
+        //waveFormView?.paused = false
         callback?.onPlay()
         handler.removeCallbacks(runnable)
         handler.postDelayed(runnable, REFRESH_DELAY_MILLIS)

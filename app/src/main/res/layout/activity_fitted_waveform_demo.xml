@@ -34,7 +34,7 @@
 
   <space.siy.waveformview.FixedWaveFormView
       android:id="@+id/waveFormView2"
-      android:layout_width="200dp"
+      android:layout_width="match_parent"
       android:layout_height="50dp"
       app:blockColor="@android:color/holo_blue_dark"
       app:blockColorPlayed="@android:color/holo_red_dark"
