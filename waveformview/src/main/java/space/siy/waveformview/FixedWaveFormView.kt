@@ -68,17 +68,24 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
     set(value) {
       if (seeking) return
       field = value
-      seekingPosition = position
+      if (position == 0L) {
+        lastProgress = 0
+        seekingPosition = 0
+      }
+      lastProgress = if (position - seekingPosition > 0) position - seekingPosition else lastProgress
+      seekingPosition += lastProgress
       invalidate()
     }
+
+  private var lastProgress = 0L
 
   /**
    * Width each block
    */
-  var blockWidth = lp.getFloat(R.styleable.FixedWaveFormView_blockWidth, 10f)
+  var blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
     set(value) {
       field = value
-      blockPaint.strokeWidth = blockWidth - 2
+      blockPaint.strokeWidth = blockWidth - SPLIT_GAP
     }
   /**
    * @see Callback
@@ -195,7 +202,6 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
 
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
             paused = false
-            Log.d("FixedFormView", "Paused: $paused")
             callback?.onTap()
           }
         }

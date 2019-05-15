@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <attr name="blockWidth" format="float"/>
+    <attr name="blockWidth" format="dimension"/>
     <attr name="topBlockScale" format="float"/>
     <attr name="bottomBlockScale" format="float"/>
     <attr name="blockColor" format="color" />

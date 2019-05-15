@@ -16,7 +16,7 @@
         app:showTimeText="true"
         app:textColor="@color/white"
         app:textBgColor="@color/black"
-        app:blockWidth="10"
+        app:blockWidth="10dp"
         app:topBlockScale="1"
         app:bottomBlockScale="0.5"
         app:peakMode="peakmode_average"

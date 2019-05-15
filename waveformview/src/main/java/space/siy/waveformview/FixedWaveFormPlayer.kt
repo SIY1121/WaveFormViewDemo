@@ -1,7 +1,9 @@
 package space.siy.waveformview
 
 import android.media.MediaPlayer
+import android.media.MediaPlayer.OnCompletionListener
 import android.os.Handler
+import android.util.Log
 
 class FixedWaveFormPlayer(val filePath: String) {
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
