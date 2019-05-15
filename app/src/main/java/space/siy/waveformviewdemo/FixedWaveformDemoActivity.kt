@@ -31,9 +31,6 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!)
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
-        override fun onLoadingProgress(float: Float) {
-        }
-
         override fun onLoadingComplete() {
           waveFormPlayer1?.play()
           progressBar1.visibility = View.GONE
@@ -53,13 +50,10 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         }
       })
 
-      val audioPath2 = getRawResourcePath("audio_sample_amr", "amr")
+      val audioPath2 = getRawResourcePath("audio_sample_webm", "webm")
       waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
-        override fun onLoadingProgress(float: Float) {
-        }
-
         override fun onLoadingComplete() {
           progressBar2.visibility = View.GONE
         }

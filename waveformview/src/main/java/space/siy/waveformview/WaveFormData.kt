@@ -80,13 +80,6 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
              *@param waveFormData built data
              */
             fun onComplete(waveFormData: WaveFormData)
-
-            /**
-             * Called when has progress
-             * You can indicate progress to user using ProgressBar
-             * @param progress value indicating progress in 0-100
-             */
-            fun onProgress(progress: Float)
         }
 
         private val extractor = MediaExtractor()
@@ -215,16 +208,12 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
             val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
             codec.configure(format, null, null, 0)
             val outFormat = codec.outputFormat
-
-            val estimateSize = format.getLong(MediaFormat.KEY_DURATION) / 1000000f * format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) * format.getInteger(MediaFormat.KEY_SAMPLE_RATE) * 2f
-
             val startTime = System.currentTimeMillis()
             codec.start()
-            Log.i("WaveFormFactory", "Start building data.")
 
             dataLoadingJob = CoroutineScope(Dispatchers.IO).launch {
                 var EOS = false
-                val stream = ByteArrayOutputStream()
+                val stream = ByteArrayOutputStream(512)
                 val info = MediaCodec.BufferInfo()
 
                 while (!EOS) {
@@ -243,9 +232,6 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                         outputBuffer.get(buffer)
                         stream.write(buffer)
                         codec.releaseOutputBuffer(outputBufferId, false)
-                        withContext(Dispatchers.Main) {
-                            callback.onProgress(stream.size() / estimateSize * 100)
-                        }
                         if (info.flags == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
                             EOS = true
                         }

@@ -92,10 +92,6 @@ class MainActivity : AppCompatActivity() {
                         }, 20)
 
                     }
-
-                    override fun onProgress(progress: Float) {
-                        progressBar.progress = (progress*10).toInt()
-                    }
                 })
     }
 

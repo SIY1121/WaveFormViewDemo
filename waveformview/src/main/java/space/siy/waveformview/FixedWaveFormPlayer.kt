@@ -58,10 +58,6 @@ class FixedWaveFormPlayer(val filePath: String) {
         this@FixedWaveFormPlayer.callback?.onError()
       }
     }
-
-    override fun onProgress(v: Float) {
-      this@FixedWaveFormPlayer.callback?.onLoadingProgress(v)
-    }
   }
 
   fun loadInto(waveFormView: FixedWaveFormView, callback: Callback) {
@@ -108,7 +104,6 @@ class FixedWaveFormPlayer(val filePath: String) {
   }
 
   interface Callback {
-    fun onLoadingProgress(float: Float)
     fun onLoadingComplete()
     fun onError()
     fun onPlay()

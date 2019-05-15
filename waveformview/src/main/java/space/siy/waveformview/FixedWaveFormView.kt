@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.floor
+import kotlin.system.measureTimeMillis
 
 /**
  * Copyright 2018 siy1121
@@ -45,16 +46,19 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
    */
   var data: WaveFormData? = null
     set(value) {
-      field = value
-      if (value == null) return
-      val possibleBlockCountOnScreen = floor(width / blockWidth).toInt()
-      resampleData = FloatArray(possibleBlockCountOnScreen)
-      if (value.samples.size > possibleBlockCountOnScreen) {
-        val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
-        for (i in 0 until possibleBlockCountOnScreen) {
-          resampleData[i] = value.samples.average(i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize)
+      val time = measureTimeMillis {
+        field = value
+        if (value == null) return
+        val possibleBlockCountOnScreen = floor(width / blockWidth).toInt()
+        resampleData = FloatArray(possibleBlockCountOnScreen)
+        if (value.samples.size > possibleBlockCountOnScreen) {
+          val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
+          for (i in 0 until possibleBlockCountOnScreen) {
+            resampleData[i] = value.samples.average(i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize)
+          }
         }
       }
+      Log.d("FixedWaveForm", "Time took $time ms")
     }
 
   /**
