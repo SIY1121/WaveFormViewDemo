@@ -11,15 +11,20 @@ class FixedWaveFormPlayer(val filePath: String) {
   private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
+  var snapToStartAtCompletion = true
 
   private val runnable = object : Runnable {
     override fun run() {
-      val currentPosition = player?.currentPosition?.toLong()
-      waveFormView?.position = currentPosition ?: 0
+      updatePosition()
       if (player?.isPlaying == true) {
         handler.postDelayed(this, REFRESH_DELAY_MILLIS)
       }
     }
+  }
+
+  private fun updatePosition() {
+    val currentPosition = player?.currentPosition?.toLong()
+    waveFormView?.position = currentPosition ?: 0
   }
 
   private val factoryCallback = object : WaveFormData.Factory.Callback {
@@ -37,6 +42,13 @@ class FixedWaveFormPlayer(val filePath: String) {
           this@FixedWaveFormPlayer.callback?.onLoadingComplete()
         }
         player?.prepareAsync()
+        player?.setOnCompletionListener {
+          waveFormView?.forceComplete()
+          if (snapToStartAtCompletion) {
+            stop()
+          }
+          callback?.onStop()
+        }
 
         wfv?.callback = object : FixedWaveFormView.Callback {
           override fun onTap() {
@@ -72,7 +84,6 @@ class FixedWaveFormPlayer(val filePath: String) {
     if (!isPlaying()) {
       player?.start()
       if (player != null) {
-        //waveFormView?.paused = false
         callback?.onPlay()
         handler.removeCallbacks(runnable)
         handler.postDelayed(runnable, REFRESH_DELAY_MILLIS)
@@ -94,7 +105,6 @@ class FixedWaveFormPlayer(val filePath: String) {
     player?.pause()
     player?.seekTo(0)
     waveFormView?.position = 0
-    callback?.onStop()
   }
 
   fun isPlaying(): Boolean = player?.isPlaying == true

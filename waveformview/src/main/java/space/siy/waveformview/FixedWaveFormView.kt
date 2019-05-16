@@ -71,8 +71,11 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
       if (position == 0L) {
         lastProgress = 0
         seekingPosition = 0
+      } else if (position == data?.duration) {
+        seekingPosition = position
       }
-      lastProgress = if (position - seekingPosition > 0) position - seekingPosition else lastProgress
+      lastProgress =
+        if (position - seekingPosition > 0) position - seekingPosition else lastProgress
       seekingPosition += lastProgress
       invalidate()
     }
@@ -218,6 +221,10 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
       sum += Math.abs(this[i].toDouble())
 
     return sum.toFloat() / (end - start)
+  }
+
+  fun forceComplete() {
+    position = data?.duration ?: 0
   }
 
   private var seeking = false

@@ -29,6 +29,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
     try {
       val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
       waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!)
+      waveFormPlayer1?.snapToStartAtCompletion = false
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
         override fun onLoadingComplete() {
@@ -47,10 +48,11 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         }
 
         override fun onStop() {
+
         }
       })
 
-      val audioPath2 = getRawResourcePath("audio_sample_ogg", "ogg")
+      val audioPath2 = getRawResourcePath("audio_sample_mp3", "mp3")
       waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
@@ -83,6 +85,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         }
       }
       btnStop.setOnClickListener {
+        btnPlayPause.text = "play"
         waveFormPlayer2?.stop()
       }
     } catch (e: FileNotFoundException) {
