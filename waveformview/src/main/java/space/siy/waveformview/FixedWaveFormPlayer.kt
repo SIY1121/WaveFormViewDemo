@@ -51,12 +51,7 @@ class FixedWaveFormPlayer(
         player?.prepareAsync()
         player?.setOnCompletionListener {
           waveFormView?.forceComplete()
-          if (snapToStartAtCompletion) {
-            stop()
-          } else {
-            releaseAudioFocus()
-          }
-          callback?.onStop()
+          stop(snapToStartAtCompletion)
         }
 
         wfv?.callback = object : FixedWaveFormView.Callback {
@@ -114,10 +109,19 @@ class FixedWaveFormPlayer(
   }
 
   fun stop() {
+    stop(true)
+  }
+
+  private fun stop(snapToStart: Boolean) {
     releaseAudioFocus()
-    player?.pause()
-    player?.seekTo(0)
-    waveFormView?.position = 0
+    if (isPlaying()) {
+      player?.pause()
+    }
+    if (snapToStart) {
+      player?.seekTo(0)
+      waveFormView?.position = 0
+    }
+    callback?.onStop()
   }
 
   private fun toggleSpeakerphone(on: Boolean) {
