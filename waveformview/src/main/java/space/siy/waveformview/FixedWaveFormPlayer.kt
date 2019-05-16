@@ -124,7 +124,7 @@ class FixedWaveFormPlayer(
     callback?.onStop()
   }
 
-  private fun toggleSpeakerphone(on: Boolean) {
+  fun toggleSpeakerphone(on: Boolean) {
     audioManager.isSpeakerphoneOn = on
   }
 

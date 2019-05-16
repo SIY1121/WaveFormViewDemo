@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnPlayPause
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnSpeakerToggle
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnStop
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
@@ -27,16 +28,16 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_fitted_waveform_demo)
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager;
 
     try {
       val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!,
-          getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!, audioManager)
       waveFormPlayer1?.snapToStartAtCompletion = false
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
         override fun onLoadingComplete() {
-          waveFormPlayer1?.play()
+          //waveFormPlayer1?.play()
           progressBar1.visibility = View.GONE
         }
 
@@ -56,8 +57,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       })
 
       val audioPath2 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!,
-          getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!, audioManager)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
         override fun onLoadingComplete() {
@@ -91,6 +91,9 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       btnStop.setOnClickListener {
         btnPlayPause.text = "play"
         waveFormPlayer2?.stop()
+      }
+      btnSpeakerToggle.setOnClickListener {
+        waveFormPlayer2?.toggleSpeakerphone(!audioManager.isSpeakerphoneOn)
       }
     } catch (e: FileNotFoundException) {
       e.printStackTrace()

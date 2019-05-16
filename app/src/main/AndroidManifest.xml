@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="space.siy.waveformviewdemo">
 
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
