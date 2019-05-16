@@ -7,6 +7,9 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.floor
 import kotlin.system.measureTimeMillis
 
@@ -46,19 +49,20 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
    */
   var data: WaveFormData? = null
     set(value) {
-      val time = measureTimeMillis {
-        field = value
-        if (value == null) return
+      field = value
+      if (value == null) return
+      CoroutineScope(Dispatchers.Default).launch {
         val possibleBlockCountOnScreen = floor(width / blockWidth).toInt()
         resampleData = FloatArray(possibleBlockCountOnScreen)
         if (value.samples.size > possibleBlockCountOnScreen) {
           val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
           for (i in 0 until possibleBlockCountOnScreen) {
-            resampleData[i] = value.samples.average(i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize)
+            resampleData[i] = value.samples.average(
+                i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize
+            )
           }
         }
       }
-      Log.d("FixedWaveForm", "Time took $time ms")
     }
 
   /**
