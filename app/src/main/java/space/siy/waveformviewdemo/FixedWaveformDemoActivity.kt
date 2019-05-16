@@ -1,5 +1,7 @@
 package space.siy.waveformviewdemo
 
+import android.content.Context
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -28,7 +30,8 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
 
     try {
       val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!)
+      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!,
+          getSystemService(Context.AUDIO_SERVICE) as AudioManager)
       waveFormPlayer1?.snapToStartAtCompletion = false
       progressBar1.visibility = View.VISIBLE
       waveFormPlayer1?.loadInto(waveFormView1, object : Callback {
@@ -53,7 +56,8 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       })
 
       val audioPath2 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!)
+      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!,
+          getSystemService(Context.AUDIO_SERVICE) as AudioManager)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
         override fun onLoadingComplete() {

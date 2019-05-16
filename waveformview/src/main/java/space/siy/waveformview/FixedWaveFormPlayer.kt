@@ -1,11 +1,18 @@
 package space.siy.waveformview
 
+import android.content.ContentValues.TAG
+import android.media.AudioManager
+import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
 import android.media.MediaPlayer.OnCompletionListener
 import android.os.Handler
 import android.util.Log
 
-class FixedWaveFormPlayer(val filePath: String) {
+class FixedWaveFormPlayer(
+  private val filePath: String,
+  private val audioManager: AudioManager
+) : OnAudioFocusChangeListener {
+
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
   private val handler = Handler()
   private var waveFormView: FixedWaveFormView? = null
@@ -46,6 +53,8 @@ class FixedWaveFormPlayer(val filePath: String) {
           waveFormView?.forceComplete()
           if (snapToStartAtCompletion) {
             stop()
+          } else {
+            releaseAudioFocus()
           }
           callback?.onStop()
         }
@@ -69,6 +78,7 @@ class FixedWaveFormPlayer(val filePath: String) {
         }
       } catch (e: Exception) {
         e.printStackTrace()
+        releaseAudioFocus()
         this@FixedWaveFormPlayer.callback?.onError()
       }
     }
@@ -82,6 +92,7 @@ class FixedWaveFormPlayer(val filePath: String) {
 
   fun play() {
     if (!isPlaying()) {
+      requestAudioFocus()
       player?.start()
       if (player != null) {
         callback?.onPlay()
@@ -93,6 +104,7 @@ class FixedWaveFormPlayer(val filePath: String) {
 
   fun pause() {
     if (isPlaying()) {
+      releaseAudioFocus()
       player?.pause()
       if (player != null) {
         callback?.onPause()
@@ -102,12 +114,37 @@ class FixedWaveFormPlayer(val filePath: String) {
   }
 
   fun stop() {
+    releaseAudioFocus()
     player?.pause()
     player?.seekTo(0)
     waveFormView?.position = 0
   }
 
+  private fun toggleSpeakerphone(on: Boolean) {
+    audioManager.isSpeakerphoneOn = on
+  }
+
+  private fun requestAudioFocus() {
+    val result = audioManager.requestAudioFocus(
+        this, AudioManager.STREAM_MUSIC,
+        AudioManager.AUDIOFOCUS_GAIN
+    )
+    if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+      Log.e(TAG, "AUDIO FOCUS - REQUEST DENIED")
+    }
+  }
+
+  private fun releaseAudioFocus() {
+    val result = audioManager.abandonAudioFocus(this)
+    if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+      Log.e(TAG, "AUDIO FOCUS ABANDON - REQUEST DENIED")
+    }
+  }
+
   fun isPlaying(): Boolean = player?.isPlaying == true
+
+  override fun onAudioFocusChange(focusChange: Int) {
+  }
 
   fun dispose() {
     waveFormDataFactory.cancel()
