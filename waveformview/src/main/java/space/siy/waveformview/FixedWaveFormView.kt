@@ -2,16 +2,18 @@ package space.siy.waveformview
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Shader
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.floor
-import kotlin.system.measureTimeMillis
 
 /**
  * Copyright 2018 siy1121
@@ -89,7 +91,7 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   /**
    * Width each block
    */
-  var blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
+  private var blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
     set(value) {
       field = value
       blockPaint.strokeWidth = blockWidth - SPLIT_GAP
@@ -102,16 +104,16 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   /**
    * Scale of top blocks
    */
-  var topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
+  private var topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
   /**
    * Scale of bottom blocks
    */
-  var bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
+  private var bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
 
   /**
    * Color used in played blocks
    */
-  var blockColorPlayed: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
+  private var blockColorPlayed: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
@@ -121,7 +123,7 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   /**
    * Color used in blocks default
    */
-  var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
+  private var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
     set(value) {
       field = value
       barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
@@ -140,7 +142,6 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   private var offsetX = 0f
   private var canvasWidth = 0
   private var seekingPosition = 0L
-  private var donePlaying = false
 
   private var barShader = LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
 
@@ -175,12 +176,11 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
         }
       }
     }
-
-    donePlaying = offsetX.toInt() == 100
   }
 
-  var lastTapTime = 0L
-  var paused = false
+  private var lastTapTime = 0L
+  private var paused = false
+  @SuppressLint("ClickableViewAccessibility")
   override fun onTouchEvent(event: MotionEvent): Boolean {
     when (event.action) {
       MotionEvent.ACTION_DOWN -> {
