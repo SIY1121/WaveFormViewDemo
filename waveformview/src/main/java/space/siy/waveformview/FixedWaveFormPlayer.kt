@@ -1,12 +1,9 @@
 package space.siy.waveformview
 
-import android.content.ContentValues.TAG
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
-import android.media.MediaPlayer.OnCompletionListener
 import android.os.Handler
-import android.util.Log
 
 class FixedWaveFormPlayer(
   private val filePath: String,
@@ -73,7 +70,6 @@ class FixedWaveFormPlayer(
         }
       } catch (e: Exception) {
         e.printStackTrace()
-        releaseAudioFocus()
         this@FixedWaveFormPlayer.callback?.onError()
       }
     }
@@ -87,7 +83,6 @@ class FixedWaveFormPlayer(
 
   fun play() {
     if (!isPlaying()) {
-      requestAudioFocus()
       player?.start()
       if (player != null) {
         callback?.onPlay()
@@ -99,7 +94,6 @@ class FixedWaveFormPlayer(
 
   fun pause() {
     if (isPlaying()) {
-      releaseAudioFocus()
       player?.pause()
       if (player != null) {
         callback?.onPause()
@@ -113,7 +107,6 @@ class FixedWaveFormPlayer(
   }
 
   private fun stop(snapToStart: Boolean) {
-    releaseAudioFocus()
     if (isPlaying()) {
       player?.pause()
     }
@@ -125,24 +118,12 @@ class FixedWaveFormPlayer(
   }
 
   fun toggleSpeakerphone(on: Boolean) {
+    if (on) {
+      audioManager.mode = AudioManager.STREAM_MUSIC
+    } else {
+      audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+    }
     audioManager.isSpeakerphoneOn = on
-  }
-
-  private fun requestAudioFocus() {
-    val result = audioManager.requestAudioFocus(
-        this, AudioManager.STREAM_MUSIC,
-        AudioManager.AUDIOFOCUS_GAIN
-    )
-    if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-      Log.e(TAG, "AUDIO FOCUS - REQUEST DENIED")
-    }
-  }
-
-  private fun releaseAudioFocus() {
-    val result = audioManager.abandonAudioFocus(this)
-    if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-      Log.e(TAG, "AUDIO FOCUS ABANDON - REQUEST DENIED")
-    }
   }
 
   fun isPlaying(): Boolean = player?.isPlaying == true
