@@ -64,7 +64,6 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
             )
           }
         }
-        invalidate()
       }
     }
 
