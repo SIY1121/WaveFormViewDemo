@@ -74,20 +74,24 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   var position: Long = 0
     set(value) {
       if (seeking) return
+      val lastValue = field
       field = value
       if (position == 0L) {
-        lastProgress = 0
+        lastDeltaProgress = 0
         seekingPosition = 0
       } else if (position == data?.duration) {
         seekingPosition = position
       }
-      lastProgress =
-        if (position - seekingPosition > 0) position - seekingPosition else lastProgress
-      seekingPosition += lastProgress
+      if (position - lastValue >= 0 && position >= seekingPosition) {
+        lastDeltaProgress = position - lastValue
+        seekingPosition = position
+      } else {
+        seekingPosition += lastDeltaProgress
+      }
       invalidate()
     }
 
-  private var lastProgress = 0L
+  private var lastDeltaProgress = 0L
 
   /**
    * Width each block
