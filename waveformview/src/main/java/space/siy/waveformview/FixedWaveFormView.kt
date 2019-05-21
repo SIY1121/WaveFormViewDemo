@@ -37,14 +37,22 @@ import kotlin.math.floor
  * You have to build [WaveFormData] first using [WaveFormData.Factory]
  *
  */
-class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int) : View(context, attr, defStyleAttr) {
+class FixedWaveFormView(
+  context: Context,
+  attr: AttributeSet?,
+  defStyleAttr: Int
+) : View(context, attr, defStyleAttr) {
   constructor(context: Context) : this(context, null, 0)
-  constructor(context: Context, attr: AttributeSet) : this(context, attr, 0)
+  constructor(
+    context: Context,
+    attr: AttributeSet
+  ) : this(context, attr, 0)
 
   /**
    * Used to retrieve the values defined in the layout XML
    */
-  private val lp = context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
+  private val lp =
+    context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
 
   /**
    * WaveFormData show in view
@@ -118,7 +126,8 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   /**
    * Color used in played blocks
    */
-  private var blockColorPlayed: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
+  private var blockColorPlayed: Int =
+    lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     set(value) {
       field = value
       barShader = LinearGradient(
@@ -154,7 +163,8 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   private var canvasWidth = 0
   private var seekingPosition = 0L
 
-  private var barShader = LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
+  private var barShader =
+    LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
 
   init {
     blockPaint.strokeWidth = blockWidth - 2
@@ -167,7 +177,9 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
 
     offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
     // Right now, I don't have any better way than allocating shader in every invalidate() invocation
-    barShader = LinearGradient(offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
+    barShader = LinearGradient(
+        offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
+    )
     blockPaint.shader = barShader
 
     // Draw data points
@@ -230,7 +242,10 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   /**
    * Extension method to average data in specific range
    */
-  private fun ShortArray.average(start: Int, end: Int): Float {
+  private fun ShortArray.average(
+    start: Int,
+    end: Int
+  ): Float {
     var sum = 0.0
     for (i in start until end)
       sum += Math.abs(this[i].toDouble())
