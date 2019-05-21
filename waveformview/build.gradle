@@ -18,6 +18,7 @@ apply plugin: "com.jfrog.artifactory"
 apply plugin: 'findbugs'
 apply plugin: 'checkstyle'
 preBuild.dependsOn 'Checkstyle'
+preBuild.dependsOn 'detekt'
 
 task findbugs(type: FindBugs, group: "codeCorrectness") {
     ignoreFailures = false

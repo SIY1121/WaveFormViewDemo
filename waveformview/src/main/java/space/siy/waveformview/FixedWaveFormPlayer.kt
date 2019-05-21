@@ -11,8 +11,8 @@ import android.os.Handler
 import android.util.Log
 
 class FixedWaveFormPlayer(
-  private val filePath: String,
-  private val audioManager: AudioManager
+    private val filePath: String,
+    private val audioManager: AudioManager
 ) : OnAudioFocusChangeListener {
 
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)

@@ -14,7 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.floor
-import android.widget.Button
 
 /**
  * Copyright 2018 siy1121
@@ -122,7 +121,10 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   private var blockColorPlayed: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     set(value) {
       field = value
-      barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
+      barShader = LinearGradient(
+          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
+          Shader.TileMode.CLAMP
+      )
       blockPaint.shader = barShader
     }
 
@@ -132,7 +134,10 @@ class FixedWaveFormView(context: Context, attr: AttributeSet?, defStyleAttr: Int
   private var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
     set(value) {
       field = value
-      barShader = LinearGradient(canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP)
+      barShader = LinearGradient(
+          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
+          Shader.TileMode.CLAMP
+      )
       blockPaint.shader = barShader
     }
 
