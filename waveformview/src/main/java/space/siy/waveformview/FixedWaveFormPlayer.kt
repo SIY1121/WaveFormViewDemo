@@ -184,8 +184,10 @@ class FixedWaveFormPlayer(
     when (focusChange) {
       AudioManager.AUDIOFOCUS_GAIN -> if (playSuspended) play()
       AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-        playSuspended = true
-        pause()
+        if (isPlaying()) {
+          playSuspended = true
+          pause()
+        }
       }
       AudioManager.AUDIOFOCUS_LOSS -> stop()
     }
