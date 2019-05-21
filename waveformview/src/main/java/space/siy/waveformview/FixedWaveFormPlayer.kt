@@ -1,9 +1,12 @@
 package space.siy.waveformview
 
 import android.content.ContentValues.TAG
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Handler
 import android.util.Log
 
@@ -18,6 +21,8 @@ class FixedWaveFormPlayer(
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
   var snapToStartAtCompletion = true
+  private var playSuspended = false
+  private var focusRequest: AudioFocusRequest? = null
 
   private val runnable = object : Runnable {
     override fun run() {
@@ -47,6 +52,12 @@ class FixedWaveFormPlayer(
           // Notify complete
           this@FixedWaveFormPlayer.callback?.onLoadingComplete()
         }
+        player?.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
         player?.prepareAsync()
         player?.setOnCompletionListener {
           waveFormView?.forceComplete()
@@ -86,7 +97,9 @@ class FixedWaveFormPlayer(
 
   fun play() {
     if (!isPlaying()) {
-      requestAudioFocus()
+      if (!playSuspended) {
+        requestAudioFocus()
+      }
       player?.start()
       if (player != null) {
         callback?.onPlay()
@@ -98,7 +111,6 @@ class FixedWaveFormPlayer(
 
   fun pause() {
     if (isPlaying()) {
-      releaseAudioFocus()
       player?.pause()
       if (player != null) {
         callback?.onPause()
@@ -112,6 +124,7 @@ class FixedWaveFormPlayer(
   }
 
   private fun stop(snapToStart: Boolean) {
+    playSuspended = false
     releaseAudioFocus()
     if (isPlaying()) {
       player?.pause()
@@ -128,17 +141,38 @@ class FixedWaveFormPlayer(
   }
 
   private fun requestAudioFocus() {
-    val result = audioManager.requestAudioFocus(
-        this, AudioManager.STREAM_MUSIC,
-        AudioManager.AUDIOFOCUS_GAIN
-    )
+    val result =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(
+                    AudioAttributes.CONTENT_TYPE_MUSIC
+                ).build()
+            )
+            .setOnAudioFocusChangeListener(this)
+            .build()
+        audioManager.requestAudioFocus(focusRequest!!)
+      } else {
+        audioManager.requestAudioFocus(
+            this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
+        )
+      }
     if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
       Log.e(TAG, "AUDIO FOCUS - REQUEST DENIED")
     }
   }
 
   private fun releaseAudioFocus() {
-    val result = audioManager.abandonAudioFocus(this)
+    val result =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (focusRequest != null) {
+          audioManager.abandonAudioFocusRequest(focusRequest!!)
+        } else {
+          AudioManager.AUDIOFOCUS_REQUEST_FAILED
+        }
+      } else {
+        audioManager.abandonAudioFocus(this)
+      }
     if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
       Log.e(TAG, "AUDIO FOCUS ABANDON - REQUEST DENIED")
     }
@@ -147,12 +181,22 @@ class FixedWaveFormPlayer(
   fun isPlaying(): Boolean = player?.isPlaying == true
 
   override fun onAudioFocusChange(focusChange: Int) {
+    when (focusChange) {
+      AudioManager.AUDIOFOCUS_GAIN -> if (playSuspended) play()
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+        playSuspended = true
+        pause()
+      }
+      AudioManager.AUDIOFOCUS_LOSS -> stop()
+    }
   }
 
   fun dispose() {
     waveFormDataFactory.cancel()
     waveFormView = null
     callback = null
+    releaseAudioFocus()
+    playSuspended = false
     player?.release()
   }
 
