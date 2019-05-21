@@ -15,6 +15,43 @@ apply plugin: 'org.jetbrains.dokka-android'
 apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'maven-publish'
 apply plugin: "com.jfrog.artifactory"
+apply plugin: 'findbugs'
+apply plugin: 'checkstyle'
+preBuild.dependsOn 'Checkstyle'
+
+task findbugs(type: FindBugs, group: "codeCorrectness") {
+    ignoreFailures = false
+    effort = "default"
+    reportLevel = "medium"
+    excludeFilter = new File("${project.rootDir}/findbugs/findbugs-filter.xml")
+    classes = files("${project.rootDir}/app/build/intermediates/classes")
+    source = fileTree('src/main/java/')
+    classpath = files()
+    reports {
+        xml.enabled = false
+        html.enabled = true
+        html {
+            destination file("$project.buildDir/findbugs/findbugs-output.html")
+        }
+    }
+}
+
+checkstyle {
+    ignoreFailures false
+    showViolations true
+    toolVersion = "8.11"
+}
+
+task Checkstyle(type: Checkstyle, group: "codeCorrectness") {
+    configFile rootProject.file('checkstyle.xml')
+    source 'src/'
+    ignoreFailures false
+    showViolations true
+    include '**/*.java'
+    include '**/*.kt'
+
+    classpath = files()
+}
 
 android {
     compileSdkVersion 28
@@ -22,7 +59,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
