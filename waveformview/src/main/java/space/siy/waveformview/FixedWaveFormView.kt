@@ -176,7 +176,8 @@ class FixedWaveFormView(
     super.onDraw(canvas)
 
     offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
-    // Right now, I don't have any better way than allocating shader in every invalidate() invocation
+    // Right now, I don't have any better way than allocating shader in every invalidate()
+    // invocation
     barShader = LinearGradient(
         offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
     )
