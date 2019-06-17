@@ -48,11 +48,48 @@ class FixedWaveFormView(
     attr: AttributeSet
   ) : this(context, attr, 0)
 
+  private var barShader =
+    LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
+  private val blockPaint: Paint
+
   /**
-   * Used to retrieve the values defined in the layout XML
+   * Width each block
    */
-  private val lp =
-    context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
+   private val blockWidth: Float
+
+  /**
+   * Scale of top blocks
+   */
+  private val topBlockScale: Float
+
+  /**
+   * Scale of bottom blocks
+   */
+  private val bottomBlockScale: Float
+
+  /**
+   * Color used in played blocks
+   */
+  private val blockColorPlayed: Int
+
+  /**
+   * Color used in blocks default
+   */
+  private val blockColor: Int
+
+  init {
+    val lp =
+      context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
+    blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
+    topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
+    bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
+    blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
+    blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
+    blockPaint = Paint()
+    blockPaint.strokeWidth = blockWidth - SPLIT_GAP
+    blockPaint.shader = barShader
+    lp.recycle()
+  }
 
   /**
    * WaveFormData show in view
@@ -101,54 +138,11 @@ class FixedWaveFormView(
 
   private var lastDeltaProgress = 0L
 
-  /**
-   * Width each block
-   */
-  private var blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
-    set(value) {
-      field = value
-      blockPaint.strokeWidth = blockWidth - SPLIT_GAP
-    }
+
   /**
    * @see Callback
    */
   var callback: Callback? = null
-
-  /**
-   * Scale of top blocks
-   */
-  private var topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
-  /**
-   * Scale of bottom blocks
-   */
-  private var bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
-
-  /**
-   * Color used in played blocks
-   */
-  private var blockColorPlayed: Int =
-    lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
-    set(value) {
-      field = value
-      barShader = LinearGradient(
-          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
-          Shader.TileMode.CLAMP
-      )
-      blockPaint.shader = barShader
-    }
-
-  /**
-   * Color used in blocks default
-   */
-  private var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
-    set(value) {
-      field = value
-      barShader = LinearGradient(
-          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
-          Shader.TileMode.CLAMP
-      )
-      blockPaint.shader = barShader
-    }
 
   /**
    * The resampled data to show
@@ -157,19 +151,8 @@ class FixedWaveFormView(
    */
   private var resampleData = FloatArray(0)
 
-  private val blockPaint = Paint()
-
   private var offsetX = 0f
-  private var canvasWidth = 0
   private var seekingPosition = 0L
-
-  private var barShader =
-    LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
-
-  init {
-    blockPaint.strokeWidth = blockWidth - 2
-    blockPaint.shader = barShader
-  }
 
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
