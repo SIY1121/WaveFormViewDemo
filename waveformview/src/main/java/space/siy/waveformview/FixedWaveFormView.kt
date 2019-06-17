@@ -8,12 +8,14 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.floor
+import kotlin.system.measureTimeMillis
 
 /**
  * Copyright 2018 siy1121
@@ -58,6 +60,11 @@ class FixedWaveFormView(
    private val blockWidth: Float
 
   /**
+   * Gap needs to be between two consecutive bar
+   */
+  private val gapWidth: Float
+
+  /**
    * Scale of top blocks
    */
   private val topBlockScale: Float
@@ -81,13 +88,12 @@ class FixedWaveFormView(
     val lp =
       context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
     blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
+    gapWidth = lp.getDimension(R.styleable.FixedWaveFormView_gapWidth, 2f)
     topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
     bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
     blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
     blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     blockPaint = Paint()
-    blockPaint.strokeWidth = blockWidth - SPLIT_GAP
-    blockPaint.shader = barShader
     lp.recycle()
   }
 
@@ -99,7 +105,8 @@ class FixedWaveFormView(
       field = value
       if (value == null) return
       CoroutineScope(Dispatchers.Default).launch {
-        val possibleBlockCountOnScreen = floor(width / blockWidth).toInt()
+        val possibleBlockCountOnScreen =
+          floor((width + (2 * gapWidth)) / (blockWidth + gapWidth)).toInt()
         resampleData = FloatArray(possibleBlockCountOnScreen)
         if (value.samples.size > possibleBlockCountOnScreen) {
           val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
@@ -157,32 +164,37 @@ class FixedWaveFormView(
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
+    measureTimeMillis {
+      offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
+      // Right now, I don't have any better way than allocating shader in every invalidate()
+      // invocation
+      barShader = LinearGradient(
+          offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
+      )
+      blockPaint.shader = barShader
 
-    offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
-    // Right now, I don't have any better way than allocating shader in every invalidate()
-    // invocation
-    barShader = LinearGradient(
-        offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
-    )
-    blockPaint.shader = barShader
-
-    // Draw data points
-    if (resampleData.isNotEmpty()) {
-      val maxAmplitude = resampleData.max()!!
-      for (i in 0 until resampleData.size) {
-        val x = i.toFloat() * blockWidth
-        if (topBlockScale > 0f) {
-          val startY = height * topBlockScale
-          val stopY = startY - (startY * resampleData[i] / maxAmplitude)
-          canvas.drawLine(x, startY, x, stopY, blockPaint)
-        }
-        if (bottomBlockScale > 0f) {
-          val startY = (height - height * bottomBlockScale) + SPLIT_GAP
-          val stopY = startY + ((height - startY) * resampleData[i] / maxAmplitude)
-          canvas.drawLine(x, startY, x, stopY, blockPaint)
+      // Draw data points
+      if (resampleData.isNotEmpty()) {
+        val maxAmplitude = resampleData.max()!!
+        for (i in 0 until resampleData.size) {
+          val multiplier = i.toFloat()
+          val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+          if (topBlockScale > 0f) {
+            val bottom = height * topBlockScale
+            val top = bottom - (bottom * resampleData[i] / maxAmplitude)
+            canvas.drawRect(x, top, x + blockWidth, bottom, blockPaint)
+          }
+          if (bottomBlockScale > 0f) {
+            val bottom = (height - height * bottomBlockScale) + gapWidth
+            val top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
+            canvas.drawRect(x, top, x + blockWidth, bottom, blockPaint)
+          }
         }
       }
+    }.also {
+      Log.d("FixedWaveFormView", "Time took: ${it}ms")
     }
+
   }
 
   private var lastTapTime = 0L
@@ -271,6 +283,5 @@ class FixedWaveFormView(
   companion object {
     const val SEEKING_THRESHOLD = 4
     const val TAP_THRESHOLD_TIME = 300L
-    const val SPLIT_GAP = 2
   }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="blockWidth" format="dimension"/>
+    <attr name="gapWidth" format="dimension"/>
     <attr name="topBlockScale" format="float"/>
     <attr name="bottomBlockScale" format="float"/>
     <attr name="blockColor" format="color" />
@@ -24,6 +25,7 @@
 
     <declare-styleable name="FixedWaveFormView">
         <attr name="blockWidth"/>
+        <attr name="gapWidth"/>
         <attr name="topBlockScale"/>
         <attr name="bottomBlockScale"/>
         <attr name="blockColor"/>
