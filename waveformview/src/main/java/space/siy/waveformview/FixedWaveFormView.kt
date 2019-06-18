@@ -69,6 +69,11 @@ class FixedWaveFormView(
   private val domeDrawEnabled: Boolean
 
   /**
+   * Flag to enable/disable seek on touch/drag
+   */
+  private val seekEnabled: Boolean
+
+  /**
    * Gap needs to be between two consecutive bar
    */
   private val gapWidth: Float
@@ -99,6 +104,7 @@ class FixedWaveFormView(
     blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
     gapWidth = lp.getDimension(R.styleable.FixedWaveFormView_gapWidth, 2f)
     domeDrawEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_domeDrawEnabled, false)
+    seekEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_seekEnabled, false)
     topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
     bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
     blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
@@ -214,6 +220,10 @@ class FixedWaveFormView(
   private var paused = false
   @SuppressLint("ClickableViewAccessibility")
   override fun onTouchEvent(event: MotionEvent): Boolean {
+    if (!seekEnabled) {
+      return false
+    }
+
     when (event.action) {
       MotionEvent.ACTION_DOWN -> {
         lastTapTime = System.currentTimeMillis()
