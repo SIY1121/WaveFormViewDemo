@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Paint.Style.FILL
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.util.Log
@@ -176,63 +175,80 @@ class FixedWaveFormView(
 
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
-    super.onDraw(canvas)
+    offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
+    // Right now, I don't have any better way than allocating shader in every invalidate()
+    // invocation
+    barShader = LinearGradient(
+        offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
+    )
+    blockPaint.shader = barShader
+
+    // Draw data points
+    if (resampleData.isEmpty()) {
+      return
+    }
+    val maxAmplitude = resampleData.max()!!
+    if (!maxAmplitude.isFinite()) {
+      return
+    }
+
     measureTimeMillis {
-      offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
-      // Right now, I don't have any better way than allocating shader in every invalidate()
-      // invocation
-      barShader = LinearGradient(
-          offsetX, 0f, offsetX + 1, 0f, blockColorPlayed, blockColor, Shader.TileMode.CLAMP
-      )
-      blockPaint.shader = barShader
-
-      val p = Paint()
-      p.color = Color.RED
-      p.style = FILL
-
-      // Draw data points
-      if (resampleData.isNotEmpty()) {
-        val maxAmplitude = resampleData.max()!!
-        for (i in 0 until resampleData.size) {
-          val multiplier = i.toFloat()
-          val x = (multiplier * blockWidth) + (multiplier * gapWidth)
-          if (topBlockScale > 0f) {
-            val bottom = height * topBlockScale
-            var top = bottom - (bottom * resampleData[i] / maxAmplitude)
-            top = if (domeDrawEnabled) (top + domeRadius) else top
-            val paddedTop = if (bottom - top < 2) (bottom - 2) else top
-            canvas.drawRect(x, paddedTop, x + blockWidth, bottom, blockPaint)
-            if (domeDrawEnabled) {
-              val domeTop = if (paddedTop + 2 == bottom) paddedTop - 2 else paddedTop - domeRadius
-              val domeBottom =
-                if (paddedTop + 2 == bottom) paddedTop + 2 else paddedTop + domeRadius
-              canvas.drawArc(
-                  x, domeTop, x + blockWidth, domeBottom, 180f, 180f,
-                  true, blockPaint
-              )
-            }
-          }
-          if (bottomBlockScale > 0f) {
-            val bottom = (height - height * bottomBlockScale) + gapWidth
-            var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
-            top = if (domeDrawEnabled) (top - domeRadius) else top
-            val paddedTop = if (top - bottom < 2) (bottom + 2) else top
-            canvas.drawRect(x, paddedTop, x + blockWidth, bottom, blockPaint)
-            if (domeDrawEnabled) {
-              val domeTop = if (paddedTop - 2 == bottom) paddedTop + 2 else paddedTop - domeRadius
-              val domeBottom =
-                if (paddedTop - 2 == bottom) paddedTop - 2 else paddedTop + domeRadius
-              canvas.drawArc(
-                  x, domeTop, x + blockWidth, domeBottom, 0f, 180f, true, p
-              )
-            }
-          }
-        }
+      for (i in 0 until resampleData.size) {
+        val multiplier = i.toFloat()
+        val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+        val dataPoint = resampleData[i]
+        drawUpperWave(dataPoint, maxAmplitude, x, canvas)
+        drawBottomWave(dataPoint, maxAmplitude, x, canvas)
       }
     }.also {
       Log.d("FixedWaveFormView", "Time took: ${it}ms")
     }
+  }
 
+  private fun drawUpperWave(
+    dataPoint: Float,
+    maxAmplitude: Float,
+    xOffset: Float,
+    canvas: Canvas
+  ) {
+    if (topBlockScale > 0f) {
+      val bottom = height * topBlockScale
+      var top = bottom - (bottom * dataPoint / maxAmplitude)
+      top = if (domeDrawEnabled) (top + domeRadius) else top
+      val paddedTop = if (bottom - top < 2) (bottom - 2) else top
+      canvas.drawRect(xOffset, paddedTop, xOffset + blockWidth, bottom, blockPaint)
+      if (domeDrawEnabled) {
+        val domeTop = if (paddedTop + 2 == bottom) paddedTop - 2 else paddedTop - domeRadius
+        val domeBottom =
+          if (paddedTop + 2 == bottom) paddedTop + 2 else paddedTop + domeRadius
+        canvas.drawArc(
+            xOffset, domeTop, xOffset + blockWidth, domeBottom, 180f, 180f, true, blockPaint
+        )
+      }
+    }
+  }
+
+  private fun drawBottomWave(
+    dataPoint: Float,
+    maxAmplitude: Float,
+    xOffset: Float,
+    canvas: Canvas
+  ) {
+    if (bottomBlockScale > 0f) {
+      val bottom = (height - height * bottomBlockScale) + gapWidth
+      var top = bottom + ((height - bottom) * dataPoint / maxAmplitude)
+      top = if (domeDrawEnabled) (top - domeRadius) else top
+      val paddedTop = if (top - bottom < 2) (bottom + 2) else top
+      canvas.drawRect(xOffset, paddedTop, xOffset + blockWidth, bottom, blockPaint)
+      if (domeDrawEnabled) {
+        val domeTop = if (paddedTop - 2 == bottom) paddedTop + 2 else paddedTop - domeRadius
+        val domeBottom =
+          if (paddedTop - 2 == bottom) paddedTop - 2 else paddedTop + domeRadius
+        canvas.drawArc(
+            xOffset, domeTop, xOffset + blockWidth, domeBottom, 0f, 180f, true, blockPaint
+        )
+      }
+    }
   }
 
   private var lastTapTime = 0L
