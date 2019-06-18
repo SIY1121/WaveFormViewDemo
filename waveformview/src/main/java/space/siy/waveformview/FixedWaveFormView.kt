@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Paint.Style.FILL
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.util.Log
@@ -60,6 +61,16 @@ class FixedWaveFormView(
    private val blockWidth: Float
 
   /**
+   * Radius of top dome
+   */
+  private val domeRadius: Float
+
+  /**
+   * Flag to enable/disable top dome drawing
+   */
+  private val domeDrawEnabled: Boolean
+
+  /**
    * Gap needs to be between two consecutive bar
    */
   private val gapWidth: Float
@@ -89,11 +100,13 @@ class FixedWaveFormView(
       context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
     blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
     gapWidth = lp.getDimension(R.styleable.FixedWaveFormView_gapWidth, 2f)
+    domeDrawEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_domeDrawEnabled, false)
     topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
     bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
     blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
     blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
     blockPaint = Paint()
+    domeRadius = blockWidth / 2
     lp.recycle()
   }
 
@@ -173,6 +186,10 @@ class FixedWaveFormView(
       )
       blockPaint.shader = barShader
 
+      val p = Paint()
+      p.color = Color.RED
+      p.style = FILL
+
       // Draw data points
       if (resampleData.isNotEmpty()) {
         val maxAmplitude = resampleData.max()!!
@@ -181,13 +198,29 @@ class FixedWaveFormView(
           val x = (multiplier * blockWidth) + (multiplier * gapWidth)
           if (topBlockScale > 0f) {
             val bottom = height * topBlockScale
-            val top = bottom - (bottom * resampleData[i] / maxAmplitude)
-            canvas.drawRect(x, top, x + blockWidth, bottom, blockPaint)
+            var top = bottom - (bottom * resampleData[i] / maxAmplitude)
+            top = if (domeDrawEnabled) (top + domeRadius) else top
+            val paddedTop = if (bottom - top < 2) (bottom - 2) else top
+            canvas.drawRect(x, paddedTop, x + blockWidth, bottom, blockPaint)
+            if (domeDrawEnabled) {
+              val domeTop = if (paddedTop + 2 == bottom) paddedTop - 2 else paddedTop - domeRadius
+              val domeBottom =
+                if (paddedTop + 2 == bottom) paddedTop + 2 else paddedTop + domeRadius
+              canvas.drawArc(
+                  x, domeTop, x + blockWidth, domeBottom, 180f, 180f,
+                  true, blockPaint
+              )
+            }
           }
           if (bottomBlockScale > 0f) {
             val bottom = (height - height * bottomBlockScale) + gapWidth
             val top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
-            canvas.drawRect(x, top, x + blockWidth, bottom, blockPaint)
+            //canvas.drawRect(x, top - domeRadius, x + blockWidth, bottom, blockPaint)
+            if (domeDrawEnabled) {
+//              canvas.drawArc(
+//                  x, top - blockWidth, x + blockWidth, top, 0f, 180f, true, blockPaint
+//              )
+            }
           }
         }
       }

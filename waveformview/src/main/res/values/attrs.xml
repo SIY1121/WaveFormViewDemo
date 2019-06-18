@@ -6,6 +6,7 @@
     <attr name="bottomBlockScale" format="float"/>
     <attr name="blockColor" format="color" />
     <attr name="blockColorPlayed" format="color" />
+    <attr name="domeDrawEnabled" format="boolean"/>
 
     <declare-styleable name="WaveFormView">
         <attr name="peakMode" format="integer">
@@ -26,6 +27,7 @@
     <declare-styleable name="FixedWaveFormView">
         <attr name="blockWidth"/>
         <attr name="gapWidth"/>
+        <attr name="domeDrawEnabled"/>
         <attr name="topBlockScale"/>
         <attr name="bottomBlockScale"/>
         <attr name="blockColor"/>
