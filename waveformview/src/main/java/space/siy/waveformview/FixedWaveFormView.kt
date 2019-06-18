@@ -130,6 +130,7 @@ class FixedWaveFormView(
             )
           }
         }
+
         upperWaveBars = generateUpperBars(resampleData)
         bottomWaveBars = generateBottomBars(resampleData)
         invalidate()
@@ -188,16 +189,11 @@ class FixedWaveFormView(
     blockPaint.shader = barShader
 
     // Draw data points
-    if (resampleData.isEmpty()) {
-      return
-    }
-    val maxAmplitude = resampleData.max()!!
-    if (!maxAmplitude.isFinite()) {
+    if (upperWaveBars?.size == 0 && bottomWaveBars?.size == 0) {
       return
     }
 
     val dataSize = resampleData.size
-
     upperWaveBars?.forEachIndexed { i, rect ->
       if (i < dataSize) {
         canvas.drawRect(rect, blockPaint)
@@ -205,7 +201,6 @@ class FixedWaveFormView(
         canvas.drawArc(rect, 180f, 180f, true, blockPaint)
       }
     }
-
     bottomWaveBars?.forEachIndexed { i, rect ->
       if (i < dataSize) {
         canvas.drawRect(rect, blockPaint)
