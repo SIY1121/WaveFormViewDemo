@@ -214,12 +214,17 @@ class FixedWaveFormView(
           }
           if (bottomBlockScale > 0f) {
             val bottom = (height - height * bottomBlockScale) + gapWidth
-            val top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
-            //canvas.drawRect(x, top - domeRadius, x + blockWidth, bottom, blockPaint)
+            var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
+            top = if (domeDrawEnabled) (top - domeRadius) else top
+            val paddedTop = if (top - bottom < 2) (bottom + 2) else top
+            canvas.drawRect(x, paddedTop, x + blockWidth, bottom, blockPaint)
             if (domeDrawEnabled) {
-//              canvas.drawArc(
-//                  x, top - blockWidth, x + blockWidth, top, 0f, 180f, true, blockPaint
-//              )
+              val domeTop = if (paddedTop - 2 == bottom) paddedTop + 2 else paddedTop - domeRadius
+              val domeBottom =
+                if (paddedTop - 2 == bottom) paddedTop - 2 else paddedTop + domeRadius
+              canvas.drawArc(
+                  x, domeTop, x + blockWidth, domeBottom, 0f, 180f, true, p
+              )
             }
           }
         }
