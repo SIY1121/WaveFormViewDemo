@@ -7,35 +7,35 @@ import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
 import android.os.Build
-import android.os.Handler
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@Suppress("DEPRECATION")
 class FixedWaveFormPlayer(
     private val filePath: String,
     private val audioManager: AudioManager
 ) : OnAudioFocusChangeListener {
 
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
-  private val handler = Handler()
   private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
   var snapToStartAtCompletion = true
   private var playSuspended = false
   private var focusRequest: AudioFocusRequest? = null
-
-  private val runnable = object : Runnable {
-    override fun run() {
-      updatePosition()
-      if (player?.isPlaying == true) {
-        handler.postDelayed(this, REFRESH_DELAY_MILLIS)
-      }
-    }
-  }
+  private var uiUpdateJob: Job? = null
 
   private fun updatePosition() {
-    val currentPosition = player?.currentPosition?.toLong()
-    waveFormView?.position = currentPosition ?: 0
+    try {
+      val currentPosition = player?.currentPosition?.toLong()
+      waveFormView?.position = currentPosition ?: 0
+    } catch (e: java.lang.Exception) {
+      e.printStackTrace()
+    }
   }
 
   private val factoryCallback = object : WaveFormData.Factory.Callback {
@@ -103,8 +103,13 @@ class FixedWaveFormPlayer(
       player?.start()
       if (player != null) {
         callback?.onPlay()
-        handler.removeCallbacks(runnable)
-        handler.postDelayed(runnable, REFRESH_DELAY_MILLIS)
+        uiUpdateJob?.cancel()
+        uiUpdateJob = CoroutineScope(Dispatchers.Default).launch {
+          do {
+            updatePosition()
+            delay(REFRESH_DELAY_MILLIS)
+          } while (player?.isPlaying == true)
+        }
       }
     }
   }
@@ -114,7 +119,7 @@ class FixedWaveFormPlayer(
       player?.pause()
       if (player != null) {
         callback?.onPause()
-        handler.removeCallbacks(runnable)
+        uiUpdateJob?.cancel()
       }
     }
   }
