@@ -6,16 +6,15 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Shader
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.floor
-import kotlin.system.measureTimeMillis
 
 /**
  * Copyright 2018 siy1121
@@ -109,6 +108,9 @@ class FixedWaveFormView(
     lp.recycle()
   }
 
+  private var upperWaveBars: Array<RectF>? = null
+  private var bottomWaveBars: Array<RectF>? = null
+
   /**
    * WaveFormData show in view
    */
@@ -128,6 +130,8 @@ class FixedWaveFormView(
             )
           }
         }
+        upperWaveBars = generateUpperBars(resampleData)
+        bottomWaveBars = generateBottomBars(resampleData)
         invalidate()
       }
     }
@@ -192,61 +196,21 @@ class FixedWaveFormView(
       return
     }
 
-    measureTimeMillis {
-      for (i in 0 until resampleData.size) {
-        val multiplier = i.toFloat()
-        val x = (multiplier * blockWidth) + (multiplier * gapWidth)
-        val dataPoint = resampleData[i]
-        drawUpperWave(dataPoint, maxAmplitude, x, canvas)
-        drawBottomWave(dataPoint, maxAmplitude, x, canvas)
-      }
-    }.also {
-      Log.d("FixedWaveFormView", "Time took: ${it}ms")
-    }
-  }
+    val dataSize = resampleData.size
 
-  private fun drawUpperWave(
-    dataPoint: Float,
-    maxAmplitude: Float,
-    xOffset: Float,
-    canvas: Canvas
-  ) {
-    if (topBlockScale > 0f) {
-      val bottom = height * topBlockScale
-      var top = bottom - (bottom * dataPoint / maxAmplitude)
-      top = if (domeDrawEnabled) (top + domeRadius) else top
-      val paddedTop = if (bottom - top < 2) (bottom - 2) else top
-      canvas.drawRect(xOffset, paddedTop, xOffset + blockWidth, bottom, blockPaint)
-      if (domeDrawEnabled) {
-        val domeTop = if (paddedTop + 2 == bottom) paddedTop - 2 else paddedTop - domeRadius
-        val domeBottom =
-          if (paddedTop + 2 == bottom) paddedTop + 2 else paddedTop + domeRadius
-        canvas.drawArc(
-            xOffset, domeTop, xOffset + blockWidth, domeBottom, 180f, 180f, true, blockPaint
-        )
+    upperWaveBars?.forEachIndexed { i, rect ->
+      if (i < dataSize) {
+        canvas.drawRect(rect, blockPaint)
+      } else {
+        canvas.drawArc(rect, 180f, 180f, true, blockPaint)
       }
     }
-  }
 
-  private fun drawBottomWave(
-    dataPoint: Float,
-    maxAmplitude: Float,
-    xOffset: Float,
-    canvas: Canvas
-  ) {
-    if (bottomBlockScale > 0f) {
-      val bottom = (height - height * bottomBlockScale) + gapWidth
-      var top = bottom + ((height - bottom) * dataPoint / maxAmplitude)
-      top = if (domeDrawEnabled) (top - domeRadius) else top
-      val paddedTop = if (top - bottom < 2) (bottom + 2) else top
-      canvas.drawRect(xOffset, paddedTop, xOffset + blockWidth, bottom, blockPaint)
-      if (domeDrawEnabled) {
-        val domeTop = if (paddedTop - 2 == bottom) paddedTop + 2 else paddedTop - domeRadius
-        val domeBottom =
-          if (paddedTop - 2 == bottom) paddedTop - 2 else paddedTop + domeRadius
-        canvas.drawArc(
-            xOffset, domeTop, xOffset + blockWidth, domeBottom, 0f, 180f, true, blockPaint
-        )
+    bottomWaveBars?.forEachIndexed { i, rect ->
+      if (i < dataSize) {
+        canvas.drawRect(rect, blockPaint)
+      } else {
+        canvas.drawArc(rect, 0f, 180f, true, blockPaint)
       }
     }
   }
@@ -337,5 +301,69 @@ class FixedWaveFormView(
   companion object {
     const val SEEKING_THRESHOLD = 4
     const val TAP_THRESHOLD_TIME = 300L
+    const val MIN_HEIGHT = 2
+  }
+
+  // Generate upper bar and dome rects
+  private fun generateUpperBars(resampleData: FloatArray): Array<RectF> {
+    val maxAmplitude = resampleData.max()!!
+    if (topBlockScale <= 0 || resampleData.isEmpty() || !maxAmplitude.isFinite()) {
+      return emptyArray()
+    }
+
+    val dataSize = resampleData.size
+    val upperBars = Array(dataSize) { i ->
+      val multiplier = i.toFloat()
+      val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+      val bottom = height * topBlockScale
+      var top = bottom - (bottom * resampleData[i] / maxAmplitude)
+      top = if (domeDrawEnabled) (top + domeRadius) else top
+      val paddedTop = if (bottom - top < MIN_HEIGHT) (bottom - MIN_HEIGHT) else top
+      RectF(x, paddedTop, x + blockWidth, bottom)
+    }
+
+    val upperDomes = if (domeDrawEnabled) Array(dataSize) { i ->
+      val upperRect = upperBars[i]
+      val bottom = upperRect.bottom
+      val paddedTop = upperRect.top
+      val domeTop =
+        if (paddedTop + MIN_HEIGHT == bottom) paddedTop - MIN_HEIGHT else paddedTop - domeRadius
+      val domeBottom =
+        if (paddedTop + MIN_HEIGHT == bottom) paddedTop + MIN_HEIGHT else paddedTop + domeRadius
+      RectF(upperRect.left, domeTop, upperRect.left + blockWidth, domeBottom)
+    } else emptyArray()
+
+    return upperBars + upperDomes
+  }
+
+  // Generate bottom bar and dome rects
+  private fun generateBottomBars(resampleData: FloatArray): Array<RectF> {
+    val maxAmplitude = resampleData.max()!!
+    if (bottomBlockScale <= 0 || resampleData.isEmpty() || !maxAmplitude.isFinite()) {
+      return emptyArray()
+    }
+
+    val bottomBars = Array(resampleData.size) { i ->
+      val multiplier = i.toFloat()
+      val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+      val bottom = (height - height * bottomBlockScale) + gapWidth
+      var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
+      top = if (domeDrawEnabled) (top - domeRadius) else top
+      val paddedTop = if (top - bottom < MIN_HEIGHT) (bottom + MIN_HEIGHT) else top
+      RectF(x, paddedTop, x + blockWidth, bottom)
+    }
+
+    val bottomDomes = if (domeDrawEnabled) Array(resampleData.size) { i ->
+      val bottomRect = bottomBars[i]
+      val bottom = bottomRect.bottom
+      val paddedTop = bottomRect.top
+      val domeTop =
+        if (paddedTop - MIN_HEIGHT == bottom) paddedTop + MIN_HEIGHT else paddedTop - domeRadius
+      val domeBottom =
+        if (paddedTop - MIN_HEIGHT == bottom) paddedTop - MIN_HEIGHT else paddedTop + domeRadius
+      RectF(bottomRect.left, domeTop, bottomRect.left + blockWidth, domeBottom)
+    } else emptyArray()
+
+    return bottomBars + bottomDomes
   }
 }
