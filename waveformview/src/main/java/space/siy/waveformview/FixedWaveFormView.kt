@@ -11,6 +11,7 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.doOnLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -117,12 +118,16 @@ class FixedWaveFormView(
   private var upperWaveBars: Array<RectF>? = null
   private var bottomWaveBars: Array<RectF>? = null
 
+  // api
+  var duration: Long = 1L // We use this in some division, so don't make it zero
+
   /**
    * WaveFormData show in view
    */
-  var data: WaveFormData? = null
+  var waveFormData: WaveFormData? = null
     set(value) {
       field = value
+      duration = value?.duration ?: 1L
       if (value == null) return
       CoroutineScope(Dispatchers.Default).launch {
         val possibleBlockCountOnScreen =
@@ -137,10 +142,17 @@ class FixedWaveFormView(
           }
         }
 
-        upperWaveBars = generateUpperBars(resampleData)
-        bottomWaveBars = generateBottomBars(resampleData)
-        invalidate()
+        requestDraw()
       }
+    }
+
+  var data: FloatArray = FloatArray(0)
+    set(value) {
+      if (value.isEmpty()) throw IllegalArgumentException("data must not be empty")
+      if (duration == 1L) throw IllegalStateException("duration must be set before")
+      field = value
+      resampleData = data
+      requestDraw()
     }
 
   /**
@@ -154,7 +166,7 @@ class FixedWaveFormView(
       if (position == 0L) {
         lastDeltaProgress = 0
         seekingPosition = 0
-      } else if (position == data?.duration) {
+      } else if (position == duration) {
         seekingPosition = position
       }
       if (position - lastValue >= 0 && position >= seekingPosition) {
@@ -177,16 +189,17 @@ class FixedWaveFormView(
   /**
    * The resampled data to show
    *
-   * This generate when [data] set
+   * This generate when [waveFormData] set
    */
-  private var resampleData = FloatArray(0)
+  var resampleData = FloatArray(0)
+    private set
 
   private var offsetX = 0f
   private var seekingPosition = 0L
 
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
-    offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
+    offsetX = (width / duration.toFloat()) * seekingPosition
     // Right now, I don't have any better way than allocating shader in every invalidate()
     // invocation
     barShader = LinearGradient(
@@ -236,7 +249,7 @@ class FixedWaveFormView(
             paused = true
             callback?.onSeekStarted()
           }
-          seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
+          seekingPosition = (duration * event.x.toLong()) / width
         }
       }
       MotionEvent.ACTION_UP -> {
@@ -245,7 +258,7 @@ class FixedWaveFormView(
 
         if (seeking) {
           seeking = false
-          seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
+          seekingPosition = (duration * event.x.toLong()) / width
           callback?.onSeek(seekingPosition)
         } else {
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
@@ -256,6 +269,14 @@ class FixedWaveFormView(
     }
     invalidate()
     return true
+  }
+
+  private fun requestDraw() {
+    doOnLayout {
+      upperWaveBars = generateUpperBars(resampleData)
+      bottomWaveBars = generateBottomBars(resampleData)
+      invalidate()
+    }
   }
 
   /**
@@ -273,7 +294,7 @@ class FixedWaveFormView(
   }
 
   fun forceComplete() {
-    position = data?.duration ?: 0
+    position = duration
   }
 
   private var seeking = false
