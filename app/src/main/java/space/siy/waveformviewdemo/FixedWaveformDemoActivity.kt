@@ -11,6 +11,8 @@ import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnSpeakerTo
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.btnStop
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.progressBar2
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.tvWaveFormView1Duration
+import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.tvWaveFormView2Duration
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView1
 import kotlinx.android.synthetic.main.activity_fitted_waveform_demo.waveFormView2
 import space.siy.waveformview.FixedWaveFormPlayer
@@ -39,6 +41,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         override fun onLoadingComplete() {
           //waveFormPlayer1?.play()
           progressBar1.visibility = View.GONE
+          tvWaveFormView1Duration.text = waveFormPlayer1?.duration.toString()
         }
 
         override fun onError() {
@@ -62,6 +65,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
         override fun onLoadingComplete() {
           progressBar2.visibility = View.GONE
+          tvWaveFormView2Duration.text = waveFormPlayer2?.duration.toString()
         }
 
         override fun onError() {
@@ -95,9 +99,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       btnSpeakerToggle.setOnClickListener {
         waveFormPlayer2?.toggleSpeakerphone(!audioManager.isSpeakerphoneOn)
       }
-    } catch (e: FileNotFoundException) {
-      e.printStackTrace()
-    } catch (e: IOException) {
+    } catch (e: Exception) {
       e.printStackTrace()
     }
   }

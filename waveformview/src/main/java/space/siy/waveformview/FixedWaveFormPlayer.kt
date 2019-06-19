@@ -20,11 +20,18 @@ class FixedWaveFormPlayer(
     private val audioManager: AudioManager
 ) : OnAudioFocusChangeListener {
 
+  // public apis
+  var snapToStartAtCompletion = true
+  /**
+   * Duration will only yield correct result after the Callback.onLoadingComplete() is called
+   */
+  var duration = 0
+    private set
+
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
   private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
-  var snapToStartAtCompletion = true
   private var playSuspended = false
   private var focusRequest: AudioFocusRequest? = null
   private var uiUpdateJob: Job? = null
@@ -49,6 +56,7 @@ class FixedWaveFormPlayer(
         player = MediaPlayer()
         player?.setDataSource(filePath)
         player?.setOnPreparedListener {
+          duration = player?.duration ?: 0
           // Notify complete
           this@FixedWaveFormPlayer.callback?.onLoadingComplete()
         }
