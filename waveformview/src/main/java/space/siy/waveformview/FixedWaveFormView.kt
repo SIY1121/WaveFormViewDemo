@@ -129,20 +129,22 @@ class FixedWaveFormView(
       field = value
       duration = value?.duration ?: 1L
       if (value == null) return
-      CoroutineScope(Dispatchers.Default).launch {
-        val possibleBlockCountOnScreen =
-          floor((width + (2 * gapWidth)) / (blockWidth + gapWidth)).toInt()
-        resampleData = FloatArray(possibleBlockCountOnScreen)
-        if (value.samples.size > possibleBlockCountOnScreen) {
-          val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
-          for (i in 0 until possibleBlockCountOnScreen) {
-            resampleData[i] = value.samples.average(
-                i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize
-            )
+      doOnLayout {
+        CoroutineScope(Dispatchers.Default).launch {
+          val possibleBlockCountOnScreen =
+              floor((width + (2 * gapWidth)) / (blockWidth + gapWidth)).toInt()
+          resampleData = FloatArray(possibleBlockCountOnScreen)
+          if (value.samples.size > possibleBlockCountOnScreen) {
+            val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
+            for (i in 0 until possibleBlockCountOnScreen) {
+              resampleData[i] = value.samples.average(
+                  i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize
+              )
+            }
           }
-        }
 
-        requestDraw()
+          requestDraw()
+        }
       }
     }
 
