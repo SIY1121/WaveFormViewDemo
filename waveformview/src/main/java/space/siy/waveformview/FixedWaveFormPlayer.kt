@@ -211,7 +211,11 @@ class FixedWaveFormPlayer(
     }
   }
 
-  fun isPlaying(): Boolean = player?.isPlaying == true
+  fun isPlaying(): Boolean = try {
+    player?.isPlaying == true
+  } catch (e: java.lang.Exception) {
+    false
+  }
 
   override fun onAudioFocusChange(focusChange: Int) {
     when (focusChange) {
