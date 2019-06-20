@@ -119,7 +119,7 @@ class FixedWaveFormView(
   private var bottomWaveBars: Array<RectF>? = null
 
   // api
-  var duration: Long = 1L // We use this in some division, so don't make it zero
+  var duration: Long = DEFAULT_DURATION
 
   /**
    * WaveFormData show in view
@@ -127,7 +127,12 @@ class FixedWaveFormView(
   var waveFormData: WaveFormData? = null
     set(value) {
       field = value
-      duration = value?.duration ?: 1L
+
+      duration = DEFAULT_DURATION
+      if (value != null && value.duration > DEFAULT_DURATION) {
+        duration = value.duration
+      }
+
       if (value == null) return
       doOnLayout {
         CoroutineScope(Dispatchers.Default).launch {
@@ -151,7 +156,7 @@ class FixedWaveFormView(
   var data: FloatArray = FloatArray(0)
     set(value) {
       if (value.isEmpty()) throw IllegalArgumentException("data must not be empty")
-      if (duration == 1L) throw IllegalStateException("duration must be set before")
+      if (duration == DEFAULT_DURATION) throw IllegalStateException("duration must be set before")
       field = value
       resampleData = data
       requestDraw()
@@ -330,6 +335,7 @@ class FixedWaveFormView(
     const val SEEKING_THRESHOLD = 4
     const val TAP_THRESHOLD_TIME = 300L
     const val MIN_HEIGHT = 2
+    const val DEFAULT_DURATION = 1L // We use this in some division, so don't make it zero
   }
 
   // Generate upper bar and dome rects
