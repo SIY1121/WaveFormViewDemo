@@ -7,31 +7,34 @@ import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
 import android.os.Build
-import android.os.Handler
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@Suppress("DEPRECATION")
 class FixedWaveFormPlayer(
     private val filePath: String,
     private val audioManager: AudioManager
 ) : OnAudioFocusChangeListener {
 
+  // public apis
+  var snapToStartAtCompletion = true
+  /**
+   * Duration will only yield correct result after the Callback.onLoadingComplete() is called
+   */
+  var duration = 0
+    private set
+
   private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
-  private val handler = Handler()
   private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
-  var snapToStartAtCompletion = true
   private var playSuspended = false
   private var focusRequest: AudioFocusRequest? = null
-
-  private val runnable = object : Runnable {
-    override fun run() {
-      updatePosition()
-      if (player?.isPlaying == true) {
-        handler.postDelayed(this, REFRESH_DELAY_MILLIS)
-      }
-    }
-  }
+  private var uiUpdateJob: Job? = null
 
   private fun updatePosition() {
     val currentPosition = player?.currentPosition?.toLong()
@@ -41,58 +44,79 @@ class FixedWaveFormPlayer(
   private val factoryCallback = object : WaveFormData.Factory.Callback {
     override fun onComplete(waveFormData: WaveFormData) {
       val wfv = this@FixedWaveFormPlayer.waveFormView
-      wfv?.data = waveFormData
+      wfv?.waveFormData = waveFormData
       wfv?.position = 0
 
-      // Initialize MediaPlayer
-      try {
-        player = MediaPlayer()
-        player?.setDataSource(filePath)
-        player?.setOnPreparedListener {
-          // Notify complete
-          this@FixedWaveFormPlayer.callback?.onLoadingComplete()
-        }
-        player?.setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-        )
-        player?.prepareAsync()
-        player?.setOnCompletionListener {
-          waveFormView?.forceComplete()
-          stop(snapToStartAtCompletion)
-        }
+      initMediaPlayer()
+    }
+  }
 
-        wfv?.callback = object : FixedWaveFormView.Callback {
-          override fun onTap() {
-            if (player?.isPlaying == true) {
-              pause()
-            } else {
-              play()
-            }
-          }
-
-          override fun onSeekStarted() {
-            pause()
-          }
-
-          override fun onSeek(pos: Long) {
-            player?.seekTo(pos.toInt())
-          }
-        }
-      } catch (e: Exception) {
-        e.printStackTrace()
-        releaseAudioFocus()
-        this@FixedWaveFormPlayer.callback?.onError()
+  private fun initMediaPlayer() {
+    // Initialize MediaPlayer
+    try {
+      player = MediaPlayer()
+      player?.setDataSource(filePath)
+      player?.setOnPreparedListener {
+        duration = player?.duration ?: 0
+        // Notify complete
+        callback?.onLoadingComplete()
       }
+      player?.setAudioAttributes(
+          AudioAttributes.Builder()
+              .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+              .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+              .build()
+      )
+      player?.prepareAsync()
+      player?.setOnCompletionListener {
+        waveFormView?.forceComplete()
+        stop(snapToStartAtCompletion)
+      }
+
+      waveFormView?.callback = object : FixedWaveFormView.Callback {
+        override fun onTap() {
+          if (player?.isPlaying == true) {
+            pause()
+          } else {
+            play()
+          }
+        }
+
+        override fun onSeekStarted() {
+          pause()
+        }
+
+        override fun onSeek(pos: Long) {
+          player?.seekTo(pos.toInt())
+        }
+      }
+    } catch (e: Exception) {
+      e.printStackTrace()
+      releaseAudioFocus()
+      callback?.onError()
     }
   }
 
   fun loadInto(waveFormView: FixedWaveFormView, callback: Callback) {
+    loadInto(waveFormView, FloatArray(0), 1, callback)
+  }
+
+  fun loadInto(
+    waveFormView: FixedWaveFormView,
+    data: FloatArray,
+    duration: Int,
+    callback: Callback
+  ) {
     this.waveFormView = waveFormView
     this.callback = callback
-    waveFormDataFactory.build(factoryCallback)
+    if (data.isEmpty()) {
+      waveFormDataFactory.build(factoryCallback)
+    } else {
+      waveFormView.duration = duration.toLong()
+      waveFormView.data = data
+      waveFormView.position = 0
+      initMediaPlayer()
+    }
   }
 
   fun play() {
@@ -103,8 +127,17 @@ class FixedWaveFormPlayer(
       player?.start()
       if (player != null) {
         callback?.onPlay()
-        handler.removeCallbacks(runnable)
-        handler.postDelayed(runnable, REFRESH_DELAY_MILLIS)
+        uiUpdateJob?.cancel()
+        uiUpdateJob = CoroutineScope(Dispatchers.Main).launch {
+          try {
+            do {
+              updatePosition()
+              delay(REFRESH_DELAY_MILLIS)
+            } while (player?.isPlaying == true)
+          } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+          }
+        }
       }
     }
   }
@@ -114,7 +147,7 @@ class FixedWaveFormPlayer(
       player?.pause()
       if (player != null) {
         callback?.onPause()
-        handler.removeCallbacks(runnable)
+        uiUpdateJob?.cancel()
       }
     }
   }
@@ -178,7 +211,11 @@ class FixedWaveFormPlayer(
     }
   }
 
-  fun isPlaying(): Boolean = player?.isPlaying == true
+  fun isPlaying(): Boolean = try {
+    player?.isPlaying == true
+  } catch (e: java.lang.Exception) {
+    false
+  }
 
   override fun onAudioFocusChange(focusChange: Int) {
     when (focusChange) {
@@ -201,6 +238,13 @@ class FixedWaveFormPlayer(
     playSuspended = false
     player?.release()
   }
+
+  /**
+   * Api to get resampled data drawn by FixedWaveFormView.
+   * Note: It doesn't guarantee when the data will be available, but if no data is available
+   * in any instance, it'll return a zero sized array.
+   */
+  fun resampledData(): FloatArray = waveFormView?.resampleData ?: FloatArray(0)
 
   interface Callback {
     fun onLoadingComplete()

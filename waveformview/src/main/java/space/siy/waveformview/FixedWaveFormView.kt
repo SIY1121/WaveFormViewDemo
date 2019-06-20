@@ -6,10 +6,12 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.doOnLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,32 +50,116 @@ class FixedWaveFormView(
     attr: AttributeSet
   ) : this(context, attr, 0)
 
+  private var barShader =
+    LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
+  private val blockPaint: Paint
+
   /**
-   * Used to retrieve the values defined in the layout XML
+   * Width each block
    */
-  private val lp =
-    context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
+   private val blockWidth: Float
+
+  /**
+   * Radius of top dome
+   */
+  private val domeRadius: Float
+
+  /**
+   * Flag to enable/disable top dome drawing
+   */
+  private val domeDrawEnabled: Boolean
+
+  /**
+   * Flag to enable/disable seek on touch/drag
+   */
+  private val seekEnabled: Boolean
+
+  /**
+   * Gap needs to be between two consecutive bar
+   */
+  private val gapWidth: Float
+
+  /**
+   * Scale of top blocks
+   */
+  private val topBlockScale: Float
+
+  /**
+   * Scale of bottom blocks
+   */
+  private val bottomBlockScale: Float
+
+  /**
+   * Color used in played blocks
+   */
+  private val blockColorPlayed: Int
+
+  /**
+   * Color used in blocks default
+   */
+  private val blockColor: Int
+
+  init {
+    val lp =
+      context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
+    blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
+    gapWidth = lp.getDimension(R.styleable.FixedWaveFormView_gapWidth, 2f)
+    domeDrawEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_domeDrawEnabled, false)
+    seekEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_seekEnabled, false)
+    topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
+    bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
+    blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
+    blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
+    blockPaint = Paint()
+    domeRadius = blockWidth / 2
+    lp.recycle()
+  }
+
+  private var upperWaveBars: Array<RectF>? = null
+  private var bottomWaveBars: Array<RectF>? = null
+
+  // api
+  var duration: Long = DEFAULT_DURATION
 
   /**
    * WaveFormData show in view
    */
-  var data: WaveFormData? = null
+  var waveFormData: WaveFormData? = null
     set(value) {
       field = value
-      if (value == null) return
-      CoroutineScope(Dispatchers.Default).launch {
-        val possibleBlockCountOnScreen = floor(width / blockWidth).toInt()
-        resampleData = FloatArray(possibleBlockCountOnScreen)
-        if (value.samples.size > possibleBlockCountOnScreen) {
-          val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
-          for (i in 0 until possibleBlockCountOnScreen) {
-            resampleData[i] = value.samples.average(
-                i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize
-            )
-          }
-        }
-        invalidate()
+
+      duration = DEFAULT_DURATION
+      if (value != null && value.duration > DEFAULT_DURATION) {
+        duration = value.duration
       }
+
+      if (value == null) return
+      doOnLayout {
+        CoroutineScope(Dispatchers.Default).launch {
+          val possibleBlockCountOnScreen =
+              floor((width + (2 * gapWidth)) / (blockWidth + gapWidth)).toInt()
+          resampleData = FloatArray(possibleBlockCountOnScreen)
+          if (value.samples.size > possibleBlockCountOnScreen) {
+            val numberOfDataToNormalize: Int = value.samples.size / possibleBlockCountOnScreen
+            for (i in 0 until possibleBlockCountOnScreen) {
+              resampleData[i] = value.samples.average(
+                  i * numberOfDataToNormalize, (i + 1) * numberOfDataToNormalize
+              )
+            }
+          }
+
+          requestDraw()
+        }
+      }
+    }
+
+  var data: FloatArray = FloatArray(0)
+    set(value) {
+      if (value.isEmpty()) throw IllegalArgumentException("data must not be empty")
+      if (duration == DEFAULT_DURATION) throw IllegalStateException("duration must be set before")
+      field = value
+      resampleData = data
+      requestDraw()
     }
 
   /**
@@ -87,7 +173,7 @@ class FixedWaveFormView(
       if (position == 0L) {
         lastDeltaProgress = 0
         seekingPosition = 0
-      } else if (position == data?.duration) {
+      } else if (position == duration) {
         seekingPosition = position
       }
       if (position - lastValue >= 0 && position >= seekingPosition) {
@@ -101,81 +187,26 @@ class FixedWaveFormView(
 
   private var lastDeltaProgress = 0L
 
-  /**
-   * Width each block
-   */
-  private var blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
-    set(value) {
-      field = value
-      blockPaint.strokeWidth = blockWidth - SPLIT_GAP
-    }
+
   /**
    * @see Callback
    */
   var callback: Callback? = null
 
   /**
-   * Scale of top blocks
-   */
-  private var topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
-  /**
-   * Scale of bottom blocks
-   */
-  private var bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
-
-  /**
-   * Color used in played blocks
-   */
-  private var blockColorPlayed: Int =
-    lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
-    set(value) {
-      field = value
-      barShader = LinearGradient(
-          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
-          Shader.TileMode.CLAMP
-      )
-      blockPaint.shader = barShader
-    }
-
-  /**
-   * Color used in blocks default
-   */
-  private var blockColor: Int = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
-    set(value) {
-      field = value
-      barShader = LinearGradient(
-          canvasWidth / 2f - 1, 0f, canvasWidth / 2f + 1, 0f, blockColorPlayed, blockColor,
-          Shader.TileMode.CLAMP
-      )
-      blockPaint.shader = barShader
-    }
-
-  /**
    * The resampled data to show
    *
-   * This generate when [data] set
+   * This generate when [waveFormData] set
    */
-  private var resampleData = FloatArray(0)
-
-  private val blockPaint = Paint()
+  var resampleData = FloatArray(0)
+    private set
 
   private var offsetX = 0f
-  private var canvasWidth = 0
   private var seekingPosition = 0L
-
-  private var barShader =
-    LinearGradient(0f, 0f, 0f, 700f, Color.RED, Color.GRAY, Shader.TileMode.CLAMP)
-
-  init {
-    blockPaint.strokeWidth = blockWidth - 2
-    blockPaint.shader = barShader
-  }
 
   @SuppressLint("DrawAllocation")
   override fun onDraw(canvas: Canvas) {
-    super.onDraw(canvas)
-
-    offsetX = (width / (data?.duration ?: 1L).toFloat()) * seekingPosition
+    offsetX = (width / duration.toFloat()) * seekingPosition
     // Right now, I don't have any better way than allocating shader in every invalidate()
     // invocation
     barShader = LinearGradient(
@@ -184,20 +215,23 @@ class FixedWaveFormView(
     blockPaint.shader = barShader
 
     // Draw data points
-    if (resampleData.isNotEmpty()) {
-      val maxAmplitude = resampleData.max()!!
-      for (i in 0 until resampleData.size) {
-        val x = i.toFloat() * blockWidth
-        if (topBlockScale > 0f) {
-          val startY = height * topBlockScale
-          val stopY = startY - (startY * resampleData[i] / maxAmplitude)
-          canvas.drawLine(x, startY, x, stopY, blockPaint)
-        }
-        if (bottomBlockScale > 0f) {
-          val startY = (height - height * bottomBlockScale) + SPLIT_GAP
-          val stopY = startY + ((height - startY) * resampleData[i] / maxAmplitude)
-          canvas.drawLine(x, startY, x, stopY, blockPaint)
-        }
+    if (upperWaveBars?.size == 0 && bottomWaveBars?.size == 0) {
+      return
+    }
+
+    val dataSize = resampleData.size
+    upperWaveBars?.forEachIndexed { i, rect ->
+      if (i < dataSize) {
+        canvas.drawRect(rect, blockPaint)
+      } else {
+        canvas.drawArc(rect, 180f, 180f, true, blockPaint)
+      }
+    }
+    bottomWaveBars?.forEachIndexed { i, rect ->
+      if (i < dataSize) {
+        canvas.drawRect(rect, blockPaint)
+      } else {
+        canvas.drawArc(rect, 0f, 180f, true, blockPaint)
       }
     }
   }
@@ -206,6 +240,10 @@ class FixedWaveFormView(
   private var paused = false
   @SuppressLint("ClickableViewAccessibility")
   override fun onTouchEvent(event: MotionEvent): Boolean {
+    if (!seekEnabled) {
+      return false
+    }
+
     when (event.action) {
       MotionEvent.ACTION_DOWN -> {
         lastTapTime = System.currentTimeMillis()
@@ -218,7 +256,7 @@ class FixedWaveFormView(
             paused = true
             callback?.onSeekStarted()
           }
-          seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
+          seekingPosition = (duration * event.x.toLong()) / width
         }
       }
       MotionEvent.ACTION_UP -> {
@@ -227,7 +265,7 @@ class FixedWaveFormView(
 
         if (seeking) {
           seeking = false
-          seekingPosition = ((data?.duration ?: 1L) * event.x.toLong()) / width
+          seekingPosition = (duration * event.x.toLong()) / width
           callback?.onSeek(seekingPosition)
         } else {
           if (System.currentTimeMillis() - lastTapTime <= TAP_THRESHOLD_TIME) {
@@ -238,6 +276,14 @@ class FixedWaveFormView(
     }
     invalidate()
     return true
+  }
+
+  private fun requestDraw() {
+    doOnLayout {
+      upperWaveBars = generateUpperBars(resampleData)
+      bottomWaveBars = generateBottomBars(resampleData)
+      invalidate()
+    }
   }
 
   /**
@@ -255,7 +301,7 @@ class FixedWaveFormView(
   }
 
   fun forceComplete() {
-    position = data?.duration ?: 0
+    position = duration
   }
 
   private var seeking = false
@@ -288,6 +334,70 @@ class FixedWaveFormView(
   companion object {
     const val SEEKING_THRESHOLD = 4
     const val TAP_THRESHOLD_TIME = 300L
-    const val SPLIT_GAP = 2
+    const val MIN_HEIGHT = 2
+    const val DEFAULT_DURATION = 1L // We use this in some division, so don't make it zero
+  }
+
+  // Generate upper bar and dome rects
+  private fun generateUpperBars(resampleData: FloatArray): Array<RectF> {
+    val maxAmplitude = resampleData.max()!!
+    if (topBlockScale <= 0 || resampleData.isEmpty() || !maxAmplitude.isFinite()) {
+      return emptyArray()
+    }
+
+    val dataSize = resampleData.size
+    val upperBars = Array(dataSize) { i ->
+      val multiplier = i.toFloat()
+      val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+      val bottom = height * topBlockScale
+      var top = bottom - (bottom * resampleData[i] / maxAmplitude)
+      top = if (domeDrawEnabled) (top + domeRadius) else top
+      val paddedTop = if (bottom - top < MIN_HEIGHT) (bottom - MIN_HEIGHT) else top
+      RectF(x, paddedTop, x + blockWidth, bottom)
+    }
+
+    val upperDomes = if (domeDrawEnabled) Array(dataSize) { i ->
+      val upperRect = upperBars[i]
+      val bottom = upperRect.bottom
+      val paddedTop = upperRect.top
+      val domeTop =
+        if (paddedTop + MIN_HEIGHT == bottom) paddedTop - MIN_HEIGHT else paddedTop - domeRadius
+      val domeBottom =
+        if (paddedTop + MIN_HEIGHT == bottom) paddedTop + MIN_HEIGHT else paddedTop + domeRadius
+      RectF(upperRect.left, domeTop, upperRect.left + blockWidth, domeBottom)
+    } else emptyArray()
+
+    return upperBars + upperDomes
+  }
+
+  // Generate bottom bar and dome rects
+  private fun generateBottomBars(resampleData: FloatArray): Array<RectF> {
+    val maxAmplitude = resampleData.max()!!
+    if (bottomBlockScale <= 0 || resampleData.isEmpty() || !maxAmplitude.isFinite()) {
+      return emptyArray()
+    }
+
+    val bottomBars = Array(resampleData.size) { i ->
+      val multiplier = i.toFloat()
+      val x = (multiplier * blockWidth) + (multiplier * gapWidth)
+      val bottom = (height - height * bottomBlockScale) + gapWidth
+      var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
+      top = if (domeDrawEnabled) (top - domeRadius) else top
+      val paddedTop = if (top - bottom < MIN_HEIGHT) (bottom + MIN_HEIGHT) else top
+      RectF(x, paddedTop, x + blockWidth, bottom)
+    }
+
+    val bottomDomes = if (domeDrawEnabled) Array(resampleData.size) { i ->
+      val bottomRect = bottomBars[i]
+      val bottom = bottomRect.bottom
+      val paddedTop = bottomRect.top
+      val domeTop =
+        if (paddedTop - MIN_HEIGHT == bottom) paddedTop + MIN_HEIGHT else paddedTop - domeRadius
+      val domeBottom =
+        if (paddedTop - MIN_HEIGHT == bottom) paddedTop - MIN_HEIGHT else paddedTop + domeRadius
+      RectF(bottomRect.left, domeTop, bottomRect.left + blockWidth, domeBottom)
+    } else emptyArray()
+
+    return bottomBars + bottomDomes
   }
 }

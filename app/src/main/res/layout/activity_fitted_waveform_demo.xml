@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    >
+>
 
   <space.siy.waveformview.FixedWaveFormView
       android:id="@+id/waveFormView1"
@@ -15,8 +15,11 @@
       app:blockColor="@android:color/holo_blue_dark"
       app:blockColorPlayed="@android:color/holo_red_dark"
       app:blockWidth="10dp"
+      app:gapWidth="2dp"
       app:topBlockScale="1"
       app:bottomBlockScale="0"
+      app:domeDrawEnabled="true"
+      app:seekEnabled="true"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintTop_toTopOf="parent"
@@ -30,7 +33,16 @@
       app:layout_constraintEnd_toEndOf="@id/waveFormView1"
       app:layout_constraintTop_toTopOf="@id/waveFormView1"
       app:layout_constraintBottom_toBottomOf="@id/waveFormView1"
-      />
+  />
+
+  <TextView
+      android:id="@+id/tvWaveFormView1Duration"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintTop_toBottomOf="@id/waveFormView1"
+      app:layout_constraintStart_toStartOf="parent"
+      tools:text="1000 ms"
+  />
 
   <space.siy.waveformview.FixedWaveFormView
       android:id="@+id/waveFormView2"
@@ -38,10 +50,13 @@
       android:layout_height="50dp"
       app:blockColor="@android:color/holo_blue_dark"
       app:blockColorPlayed="@android:color/holo_red_dark"
-      app:blockWidth="5dp"
+      app:blockWidth="4dp"
+      app:gapWidth="2dp"
+      app:domeDrawEnabled="true"
+      app:seekEnabled="true"
       app:topBlockScale="0.5"
       app:bottomBlockScale="0.5"
-      android:layout_marginTop="16dp"
+      android:layout_marginTop="32dp"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintTop_toBottomOf="@id/waveFormView1"
@@ -54,7 +69,7 @@
       app:layout_constraintStart_toStartOf="@id/waveFormView2"
       app:layout_constraintTop_toBottomOf="@id/waveFormView2"
       android:text="play"
-      />
+  />
 
   <Button
       android:id="@+id/btnStop"
@@ -63,7 +78,7 @@
       app:layout_constraintEnd_toEndOf="@id/waveFormView2"
       app:layout_constraintTop_toBottomOf="@id/waveFormView2"
       android:text="stop"
-      />
+  />
 
   <Button
       android:id="@+id/btnSpeakerToggle"
@@ -73,7 +88,7 @@
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintTop_toBottomOf="@id/waveFormView2"
       android:text="s/E"
-      />
+  />
 
   <ProgressBar
       android:id="@+id/progressBar2"
@@ -84,6 +99,13 @@
       app:layout_constraintTop_toTopOf="@id/waveFormView2"
       app:layout_constraintBottom_toBottomOf="@id/waveFormView2"
       style="?android:attr/progressBarStyleSmall"
-      />
-
+  />
+  <TextView
+      android:id="@+id/tvWaveFormView2Duration"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintTop_toBottomOf="@id/btnPlayPause"
+      app:layout_constraintStart_toStartOf="parent"
+      tools:text="1000 ms"
+  />
 </androidx.constraintlayout.widget.ConstraintLayout>
