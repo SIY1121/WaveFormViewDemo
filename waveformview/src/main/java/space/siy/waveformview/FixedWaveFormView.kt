@@ -11,10 +11,12 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.floor
 
 /**
@@ -38,6 +40,8 @@ import kotlin.math.floor
  *
  * You have to build [WaveFormData] first using [WaveFormData.Factory]
  *
+ * Note: Do not use View.INVISIBLE visibility flag, use View.GONE instead. Otherwise some weired
+ * UI bug may happen.
  */
 class FixedWaveFormView(
   context: Context,
@@ -99,11 +103,14 @@ class FixedWaveFormView(
    */
   private val blockColor: Int
 
+  private val verticalGap: Float
+
   init {
     val lp =
       context.obtainStyledAttributes(attr, R.styleable.FixedWaveFormView, defStyleAttr, 0)
     blockWidth = lp.getDimension(R.styleable.FixedWaveFormView_blockWidth, 5f)
     gapWidth = lp.getDimension(R.styleable.FixedWaveFormView_gapWidth, 2f)
+    verticalGap = lp.getDimension(R.styleable.FixedWaveFormView_verticalGap, 0f)
     domeDrawEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_domeDrawEnabled, false)
     seekEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_seekEnabled, false)
     topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
@@ -148,7 +155,9 @@ class FixedWaveFormView(
             }
           }
 
-          requestDraw()
+          withContext(Dispatchers.Main) {
+            requestDraw()
+          }
         }
       }
     }
@@ -279,11 +288,20 @@ class FixedWaveFormView(
   }
 
   private fun requestDraw() {
-    doOnLayout {
-      upperWaveBars = generateUpperBars(resampleData)
-      bottomWaveBars = generateBottomBars(resampleData)
-      invalidate()
+    if (ViewCompat.isLaidOut(this)) {
+      drawBars()
+    } else {
+      doOnLayout {
+        drawBars()
+      }
+      requestLayout()
     }
+  }
+
+  private fun drawBars() {
+    upperWaveBars = generateUpperBars(resampleData)
+    bottomWaveBars = generateBottomBars(resampleData)
+    invalidate()
   }
 
   /**
@@ -380,7 +398,7 @@ class FixedWaveFormView(
     val bottomBars = Array(resampleData.size) { i ->
       val multiplier = i.toFloat()
       val x = (multiplier * blockWidth) + (multiplier * gapWidth)
-      val bottom = (height - height * bottomBlockScale) + gapWidth
+      val bottom = (height - height * bottomBlockScale) + verticalGap
       var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
       top = if (domeDrawEnabled) (top - domeRadius) else top
       val paddedTop = if (top - bottom < MIN_HEIGHT) (bottom + MIN_HEIGHT) else top

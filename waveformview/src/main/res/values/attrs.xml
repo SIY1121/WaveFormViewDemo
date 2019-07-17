@@ -8,6 +8,7 @@
     <attr name="blockColorPlayed" format="color" />
     <attr name="domeDrawEnabled" format="boolean"/>
     <attr name="seekEnabled" format="boolean"/>
+    <attr name="verticalGap" format="dimension"/>
 
     <declare-styleable name="WaveFormView">
         <attr name="peakMode" format="integer">
@@ -34,6 +35,7 @@
         <attr name="blockColor"/>
         <attr name="blockColorPlayed"/>
         <attr name="seekEnabled"/>
+        <attr name="verticalGap"/>
     </declare-styleable>
 
 </resources>
