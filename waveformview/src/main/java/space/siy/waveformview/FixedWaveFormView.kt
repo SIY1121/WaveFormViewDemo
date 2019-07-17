@@ -11,10 +11,12 @@ import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.floor
 
 /**
@@ -38,6 +40,8 @@ import kotlin.math.floor
  *
  * You have to build [WaveFormData] first using [WaveFormData.Factory]
  *
+ * Note: Do not use View.INVISIBLE visibility flag, use View.GONE instead. Otherwise some weired
+ * UI bug may happen.
  */
 class FixedWaveFormView(
   context: Context,
@@ -151,7 +155,9 @@ class FixedWaveFormView(
             }
           }
 
-          requestDraw()
+          withContext(Dispatchers.Main) {
+            requestDraw()
+          }
         }
       }
     }
@@ -282,11 +288,20 @@ class FixedWaveFormView(
   }
 
   private fun requestDraw() {
-    doOnLayout {
-      upperWaveBars = generateUpperBars(resampleData)
-      bottomWaveBars = generateBottomBars(resampleData)
-      invalidate()
+    if (ViewCompat.isLaidOut(this)) {
+      drawBars()
+    } else {
+      doOnLayout {
+        drawBars()
+      }
+      requestLayout()
     }
+  }
+
+  private fun drawBars() {
+    upperWaveBars = generateUpperBars(resampleData)
+    bottomWaveBars = generateBottomBars(resampleData)
+    invalidate()
   }
 
   /**
