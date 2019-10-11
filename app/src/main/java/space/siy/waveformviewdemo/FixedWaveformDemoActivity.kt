@@ -1,6 +1,7 @@
 package space.siy.waveformviewdemo
 
 import android.content.Context
+import android.graphics.Color
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
@@ -19,6 +20,7 @@ import space.siy.waveformview.FixedWaveFormPlayer.Callback
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.random.Random
 
 class FixedWaveformDemoActivity : AppCompatActivity() {
 
@@ -95,6 +97,9 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
         if (waveFormPlayer2?.isPlaying() == true) {
           waveFormPlayer2?.pause()
         } else {
+          fun randomColor() = Random.nextInt(0, 256)
+          waveFormView2.blockColor = Color.rgb(randomColor(), randomColor(), randomColor())
+          waveFormView2.blockColorPlayed = Color.rgb(randomColor(), randomColor(), randomColor())
           waveFormPlayer2?.play()
         }
       }

@@ -96,12 +96,20 @@ class FixedWaveFormView(
   /**
    * Color used in played blocks
    */
-  private val blockColorPlayed: Int
+  var blockColorPlayed: Int = Color.RED
+    set(value) {
+      field = value
+      invalidate()
+    }
 
   /**
    * Color used in blocks default
    */
-  private val blockColor: Int
+  var blockColor: Int = Color.WHITE
+    set(value) {
+      field = value
+      invalidate()
+    }
 
   private val verticalGap: Float
 
@@ -115,8 +123,8 @@ class FixedWaveFormView(
     seekEnabled = lp.getBoolean(R.styleable.FixedWaveFormView_seekEnabled, false)
     topBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_topBlockScale, 1f)
     bottomBlockScale = lp.getFloat(R.styleable.FixedWaveFormView_bottomBlockScale, 0f)
-    blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, Color.WHITE)
-    blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, Color.RED)
+    blockColor = lp.getColor(R.styleable.FixedWaveFormView_blockColor, blockColor)
+    blockColorPlayed = lp.getColor(R.styleable.FixedWaveFormView_blockColorPlayed, blockColorPlayed)
     blockPaint = Paint()
     domeRadius = blockWidth / 2
     lp.recycle()
