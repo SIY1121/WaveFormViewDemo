@@ -240,7 +240,7 @@ class WaveFormData private constructor(
         while (!eos) {
           val inputBufferId = codec.dequeueInputBuffer(10)
           if (inputBufferId >= 0) {
-            val inputBuffer = codec.getInputBuffer(inputBufferId)
+            val inputBuffer = codec.getInputBuffer(inputBufferId) ?: return@launch
             val readSize = extractor.readSampleData(inputBuffer, 0)
             extractor.advance()
             codec.queueInputBuffer(
@@ -251,7 +251,7 @@ class WaveFormData private constructor(
 
           val outputBufferId = codec.dequeueOutputBuffer(info, 10)
           if (outputBufferId >= 0) {
-            val outputBuffer = codec.getOutputBuffer(outputBufferId)
+            val outputBuffer = codec.getOutputBuffer(outputBufferId) ?: return@launch
             val buffer = ByteArray(outputBuffer.remaining())
             outputBuffer.get(buffer)
             stream.write(buffer)

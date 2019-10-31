@@ -405,18 +405,18 @@ class FixedWaveFormView(
 
     val bottomBars = Array(resampleData.size) { i ->
       val multiplier = i.toFloat()
-      val x = (multiplier * blockWidth) + (multiplier * gapWidth)
-      val bottom = (height - height * bottomBlockScale) + verticalGap
-      var top = bottom + ((height - bottom) * resampleData[i] / maxAmplitude)
-      top = if (domeDrawEnabled) (top - domeRadius) else top
-      val paddedTop = if (top - bottom < MIN_HEIGHT) (bottom + MIN_HEIGHT) else top
-      RectF(x, paddedTop, x + blockWidth, bottom)
+      val x = multiplier * (blockWidth + gapWidth)
+      val top = (height - height * bottomBlockScale) + verticalGap
+      var barHeight = (height - top) * resampleData[i] / maxAmplitude
+      barHeight = if (domeDrawEnabled) (barHeight - domeRadius) else barHeight
+      val bottom = if (barHeight < MIN_HEIGHT) (top + MIN_HEIGHT) else top + barHeight
+      RectF(x, top, x + blockWidth, bottom)
     }
 
     val bottomDomes = if (domeDrawEnabled) Array(resampleData.size) { i ->
       val bottomRect = bottomBars[i]
-      val bottom = bottomRect.bottom
-      val paddedTop = bottomRect.top
+      val bottom = bottomRect.top
+      val paddedTop = bottomRect.bottom
       val domeTop =
         if (paddedTop - MIN_HEIGHT == bottom) paddedTop + MIN_HEIGHT else paddedTop - domeRadius
       val domeBottom =
