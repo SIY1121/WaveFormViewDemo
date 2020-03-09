@@ -42,7 +42,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
 
     try {
       val audioPath1 = getRawResourcePath("audio_sample_mp3", "mp3")
-      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!, audioManager)
+      waveFormPlayer1 = FixedWaveFormPlayer(audioPath1!!, applicationContext)
       waveFormPlayer1?.snapToStartAtCompletion = false
       progressBar1.visibility = View.VISIBLE
 
@@ -68,7 +68,7 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
       })
 
       val audioPath2 = getRawResourcePath("audio_greetings", "wav")
-      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!, audioManager)
+      waveFormPlayer2 = FixedWaveFormPlayer(audioPath2!!, applicationContext)
       progressBar2.visibility = View.VISIBLE
       waveFormPlayer2?.loadInto(waveFormView2, object : Callback {
         override fun onLoadingComplete() {
