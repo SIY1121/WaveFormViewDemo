@@ -1,9 +1,11 @@
 package space.siy.waveformview
 
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaPlayer
 import android.os.Build
@@ -13,11 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Suppress("DEPRECATION")
 class FixedWaveFormPlayer(
     private val filePath: String,
-    private val audioManager: AudioManager
+    context: Context
 ) : OnAudioFocusChangeListener {
 
   // public apis
@@ -28,13 +31,16 @@ class FixedWaveFormPlayer(
   var duration = 0
     private set
 
-  private val waveFormDataFactory: WaveFormData.Factory = WaveFormData.Factory(filePath)
+  private var waveFormDataFactory: WaveFormData.Factory? = null
   private var waveFormView: FixedWaveFormView? = null
   private var callback: Callback? = null
   private var player: MediaPlayer? = null
   private var playSuspended = false
+  private val audioManager: AudioManager =
+    context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
   private var focusRequest: AudioFocusRequest? = null
   private var uiUpdateJob: Job? = null
+  private var dataLoadingJob: Job? = null
 
   private fun updatePosition() {
     val currentPosition = player?.currentPosition?.toLong()
@@ -63,8 +69,8 @@ class FixedWaveFormPlayer(
       }
       player?.setAudioAttributes(
           AudioAttributes.Builder()
-              .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-              .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+              .setUsage(AudioAttributes.USAGE_MEDIA)
+              .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
               .build()
       )
       player?.prepareAsync()
@@ -110,7 +116,13 @@ class FixedWaveFormPlayer(
     this.waveFormView = waveFormView
     this.callback = callback
     if (data.isEmpty()) {
-      waveFormDataFactory.build(factoryCallback)
+      dataLoadingJob?.cancel()
+      dataLoadingJob = CoroutineScope(Dispatchers.Main).launch {
+        waveFormDataFactory = withContext(Dispatchers.IO) { WaveFormData.Factory(filePath) }
+        if (dataLoadingJob?.isActive == true) {
+          waveFormDataFactory?.build(factoryCallback)
+        }
+      }
     } else {
       waveFormView.duration = duration.toLong()
       waveFormView.data = data
@@ -169,6 +181,8 @@ class FixedWaveFormPlayer(
     callback?.onStop()
   }
 
+  // toggle depends on audio mode. So caller needs to make sure proper audio mode is
+  // set, otherwise the request is a no-op.
   fun toggleSpeakerphone(on: Boolean) {
     audioManager.isSpeakerphoneOn = on
   }
@@ -176,7 +190,7 @@ class FixedWaveFormPlayer(
   private fun requestAudioFocus() {
     val result =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        focusRequest = AudioFocusRequest.Builder(AUDIOFOCUS_GAIN_TRANSIENT)
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(
                     AudioAttributes.CONTENT_TYPE_MUSIC
@@ -187,7 +201,7 @@ class FixedWaveFormPlayer(
         audioManager.requestAudioFocus(focusRequest!!)
       } else {
         audioManager.requestAudioFocus(
-            this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
+            this, AudioManager.STREAM_MUSIC, AUDIOFOCUS_GAIN_TRANSIENT
         )
       }
     if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
@@ -219,7 +233,7 @@ class FixedWaveFormPlayer(
 
   override fun onAudioFocusChange(focusChange: Int) {
     when (focusChange) {
-      AudioManager.AUDIOFOCUS_GAIN -> if (playSuspended) play()
+      AudioManager.AUDIOFOCUS_GAIN, AUDIOFOCUS_GAIN_TRANSIENT -> if (playSuspended) play()
       AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
         if (isPlaying()) {
           playSuspended = true
@@ -231,7 +245,8 @@ class FixedWaveFormPlayer(
   }
 
   fun dispose() {
-    waveFormDataFactory.cancel()
+    dataLoadingJob?.cancel()
+    waveFormDataFactory?.cancel()
     waveFormView = null
     callback = null
     releaseAudioFocus()
