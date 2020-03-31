@@ -19,9 +19,13 @@ import kotlinx.coroutines.withContext
 
 @Suppress("DEPRECATION")
 class FixedWaveFormPlayer(
-    private val filePath: String,
-    context: Context
+  private val filePath: String,
+  context: Context
 ) : OnAudioFocusChangeListener {
+
+  companion object {
+    const val REFRESH_DELAY_MILLIS = 20L
+  }
 
   // public apis
   var snapToStartAtCompletion = true
@@ -136,20 +140,24 @@ class FixedWaveFormPlayer(
       if (!playSuspended) {
         requestAudioFocus()
       }
-      player?.start()
-      if (player != null) {
-        callback?.onPlay()
-        uiUpdateJob?.cancel()
-        uiUpdateJob = CoroutineScope(Dispatchers.Main).launch {
-          try {
-            do {
-              updatePosition()
-              delay(REFRESH_DELAY_MILLIS)
-            } while (player?.isPlaying == true)
-          } catch (e: java.lang.Exception) {
-            e.printStackTrace()
+      try {
+        player?.start()
+        if (player != null) {
+          callback?.onPlay()
+          uiUpdateJob?.cancel()
+          uiUpdateJob = CoroutineScope(Dispatchers.Main).launch {
+            try {
+              do {
+                updatePosition()
+                delay(REFRESH_DELAY_MILLIS)
+              } while (player?.isPlaying == true)
+            } catch (e: Exception) {
+              e.printStackTrace()
+            }
           }
         }
+      } catch (ignored: Exception) {
+        stop()
       }
     }
   }
@@ -175,10 +183,13 @@ class FixedWaveFormPlayer(
       player?.pause()
     }
     if (snapToStart) {
-      player?.seekTo(0)
+      try {
+        player?.seekTo(0)
+      } catch (ignored: Exception) { }
       waveFormView?.position = 0
     }
     callback?.onStop()
+    uiUpdateJob?.cancel()
   }
 
   // toggle depends on audio mode. So caller needs to make sure proper audio mode is
@@ -227,7 +238,7 @@ class FixedWaveFormPlayer(
 
   fun isPlaying(): Boolean = try {
     player?.isPlaying == true
-  } catch (e: java.lang.Exception) {
+  } catch (e: Exception) {
     false
   }
 
@@ -248,6 +259,8 @@ class FixedWaveFormPlayer(
     waveFormDataFactory?.cancel()
     waveFormView = null
     callback = null
+    uiUpdateJob?.cancel()
+    uiUpdateJob = null
     releaseAudioFocus()
     playSuspended = false
     player?.release()
@@ -266,9 +279,5 @@ class FixedWaveFormPlayer(
     fun onPlay()
     fun onPause()
     fun onStop()
-  }
-
-  companion object {
-    const val REFRESH_DELAY_MILLIS = 20L
   }
 }
