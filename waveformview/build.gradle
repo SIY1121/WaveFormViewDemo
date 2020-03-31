@@ -54,6 +54,9 @@ android {
         }
     }
 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
 }
 
 publishing {
@@ -111,15 +114,15 @@ artifactory {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.0.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1'
+    implementation 'androidx.core:core-ktx:1.2.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.5'
 }
 
 repositories {
