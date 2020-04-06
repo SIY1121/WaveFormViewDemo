@@ -52,7 +52,8 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
           progressBar1.visibility = View.GONE
         }
 
-        override fun onError() {
+        override fun onError(e: Exception) {
+          e.printStackTrace()
           progressBar1.visibility = View.GONE
         }
 
@@ -76,7 +77,8 @@ class FixedWaveformDemoActivity : AppCompatActivity() {
           tvWaveFormView2Duration.text = waveFormPlayer2?.duration.toString()
         }
 
-        override fun onError() {
+        override fun onError(e: Exception) {
+          e.printStackTrace()
           btnPlayPause.text = "play"
           progressBar2.visibility = View.GONE
         }

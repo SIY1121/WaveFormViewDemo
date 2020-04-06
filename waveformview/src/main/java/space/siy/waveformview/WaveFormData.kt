@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
+import java.lang.Exception
+import java.lang.RuntimeException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -87,6 +89,11 @@ class WaveFormData private constructor(
        *@param waveFormData built data
        */
       fun onComplete(waveFormData: WaveFormData)
+
+      /**
+       * Called if for any reason getting data from an audio file fails
+       */
+      fun onFailed(e: Exception)
     }
 
     private val extractor = MediaExtractor()
@@ -208,9 +215,9 @@ class WaveFormData private constructor(
     }
 
     private fun MediaExtractor.getAudioTrackIndex(): Int {
-      for (i in 0 until extractor.trackCount) {
+      for (i in 0 until trackCount) {
         // select audio track
-        if (extractor.getTrackFormat(i).getString(MediaFormat.KEY_MIME).contains("audio/")) {
+        if (getTrackFormat(i).getString(MediaFormat.KEY_MIME)?.contains("audio/") == true) {
           return i
         }
       }
@@ -229,7 +236,6 @@ class WaveFormData private constructor(
       val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
       codec.configure(format, null, null, 0)
       val outFormat = codec.outputFormat
-      val startTime = System.currentTimeMillis()
       codec.start()
 
       dataLoadingJob = CoroutineScope(Dispatchers.IO).launch {
@@ -240,7 +246,14 @@ class WaveFormData private constructor(
         while (!eos) {
           val inputBufferId = codec.dequeueInputBuffer(10)
           if (inputBufferId >= 0) {
-            val inputBuffer = codec.getInputBuffer(inputBufferId) ?: return@launch
+            val inputBuffer = codec.getInputBuffer(inputBufferId)
+            if (inputBuffer == null) {
+              callback.onFailed(
+                  RuntimeException("codec.getInputBuffer(inputBufferId) returned null")
+              )
+              return@launch
+            }
+
             val readSize = extractor.readSampleData(inputBuffer, 0)
             extractor.advance()
             codec.queueInputBuffer(
@@ -251,7 +264,14 @@ class WaveFormData private constructor(
 
           val outputBufferId = codec.dequeueOutputBuffer(info, 10)
           if (outputBufferId >= 0) {
-            val outputBuffer = codec.getOutputBuffer(outputBufferId) ?: return@launch
+            val outputBuffer = codec.getOutputBuffer(outputBufferId)
+            if (outputBuffer == null) {
+              callback.onFailed(
+                  RuntimeException("codec.getOutputBuffer(outputBufferId) returned null")
+              )
+              return@launch
+            }
+
             val buffer = ByteArray(outputBuffer.remaining())
             outputBuffer.get(buffer)
             stream.write(buffer)
@@ -264,14 +284,21 @@ class WaveFormData private constructor(
         codec.stop()
         codec.release()
 
-        val data = WaveFormData(
-            outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE),
-            outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT),
-            extractor.getTrackFormat(audioTrackIndex).getLong(MediaFormat.KEY_DURATION) / 1000,
-            stream
-        )
-        withContext(Dispatchers.Main) {
-          callback.onComplete(data)
+        try {
+          val data = WaveFormData(
+              outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE),
+              outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT),
+              extractor.getTrackFormat(audioTrackIndex)
+                  .getLong(MediaFormat.KEY_DURATION) / 1000,
+              stream
+          )
+          withContext(Dispatchers.Main) {
+            callback.onComplete(data)
+          }
+        } catch (e: Exception) {
+          withContext(Dispatchers.Main) {
+            callback.onFailed(e)
+          }
         }
       }
     }
