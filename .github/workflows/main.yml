@@ -1,0 +1,47 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  CICD:
+    name: Hushed-ADR
+    runs-on: ubuntu-18.04
+    steps:
+    - name: free disk space
+      run: |
+        sudo swapoff -a
+        sudo rm -f /swapfile
+        sudo apt clean
+        docker rmi $(docker image ls -aq)
+        df -h
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - name: Login to AWS ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Pull request steps
+      if: github.event_name == 'pull_request'
+      #timeout-minutes: 20
+      run: |
+          docker run -t --env github_event_name=pull_request 206332826436.dkr.ecr.us-east-1.amazonaws.com/hushed-client-adr:v0.2 /bin/sh -c "/CI/lib-waveform.sh" 
+          echo "******************************************************************************************************"
+    - name: Push steps
+      if: github.event_name == 'push'
+      run: |
+          docker run -t --env github_event_name=push 206332826436.dkr.ecr.us-east-1.amazonaws.com/hushed-client-adr:v0.2 /bin/sh -c "/CI/lib-waveform.sh"  
+          echo "******************************************************************************************************"
+    - name: Logout of AWS ECR
+      if: always()
+      run: docker logout ${{ steps.login-ecr.outputs.registry }}
