@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.activity_main.seekBar4
 import kotlinx.android.synthetic.main.activity_main.waveFormView
 import space.siy.waveformview.WaveFormData
 import space.siy.waveformview.WaveFormView
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity() {
 
@@ -116,6 +117,10 @@ class MainActivity : AppCompatActivity() {
               }
             }, 20)
 
+          }
+
+          override fun onFailed(e: Exception) {
+            e.printStackTrace()
           }
         })
   }

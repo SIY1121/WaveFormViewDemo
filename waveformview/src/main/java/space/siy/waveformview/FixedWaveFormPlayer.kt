@@ -59,6 +59,10 @@ class FixedWaveFormPlayer(
 
       initMediaPlayer()
     }
+
+    override fun onFailed(e: Exception) {
+      callback?.onError(e)
+    }
   }
 
   private fun initMediaPlayer() {
@@ -101,9 +105,8 @@ class FixedWaveFormPlayer(
         }
       }
     } catch (e: Exception) {
-      e.printStackTrace()
       releaseAudioFocus()
-      callback?.onError()
+      callback?.onError(e)
     }
   }
 
@@ -275,7 +278,7 @@ class FixedWaveFormPlayer(
 
   interface Callback {
     fun onLoadingComplete()
-    fun onError()
+    fun onError(e: Exception)
     fun onPlay()
     fun onPause()
     fun onStop()
