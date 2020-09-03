@@ -16,6 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 @Suppress("DEPRECATION")
 class FixedWaveFormPlayer(
@@ -125,7 +126,17 @@ class FixedWaveFormPlayer(
     if (data.isEmpty()) {
       dataLoadingJob?.cancel()
       dataLoadingJob = CoroutineScope(Dispatchers.Main).launch {
-        waveFormDataFactory = withContext(Dispatchers.IO) { WaveFormData.Factory(filePath) }
+        waveFormDataFactory = withContext(Dispatchers.IO) {
+          try {
+            // Todo ADR-3069: There are suggestion to handle the file input stream by ourselves and
+            // then feed into the MediaExtractor so the exception doesn't happen, but that needs
+            // to be tested extensively and not a good fit for this hotfix
+            WaveFormData.Factory(filePath)
+          } catch (e: IOException) {
+            callback.onError(e)
+            null
+          }
+        }
         if (dataLoadingJob?.isActive == true) {
           waveFormDataFactory?.build(factoryCallback)
         }
