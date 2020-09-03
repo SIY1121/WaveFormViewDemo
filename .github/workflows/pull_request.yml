@@ -1,0 +1,19 @@
+name: Pull Requests
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened]
+jobs:
+  build:
+    name: Pull Request Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Pull Request
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - name: Pull request steps
+      timeout-minutes: 20
+      run: |
+          ./gradlew clean build
+          ./gradlew checkstyle
