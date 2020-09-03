@@ -1,0 +1,22 @@
+name: Release
+on:
+  push:
+    branches: [ master ]
+jobs:
+  build:
+    name: Hushed-ADR
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Pull Request
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - name: Publish
+      env:
+        artifactory_user: ${{ secrets.ARTIFACTORY_USERNAME }}
+        artifactory_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        artifactory_url: "https://artifactory.testing.hushed.com/artifactory"
+      run: |
+          ./gradlew clean build
+          ./gradlew checkstyle
+          ./gradlew artifactoryPublish -Partifactory_contextUrl=$artifactory_url -Partifactory_user=$artifactory_user -Partifactory_password=$artifactory_password
