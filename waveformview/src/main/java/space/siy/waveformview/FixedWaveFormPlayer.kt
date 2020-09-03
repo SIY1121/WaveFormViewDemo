@@ -128,9 +128,9 @@ class FixedWaveFormPlayer(
       dataLoadingJob = CoroutineScope(Dispatchers.Main).launch {
         waveFormDataFactory = withContext(Dispatchers.IO) {
           try {
-            // Todo: There are suggestion to handle the file input stream by ourselves and then feed
-            // into the MediaExtractor so the exception doesn't happen, but that needs to be tested
-            // extensively and not a good fit for this hotfix*/
+            // Todo ADR-3069: There are suggestion to handle the file input stream by ourselves and
+            // then feed into the MediaExtractor so the exception doesn't happen, but that needs
+            // to be tested extensively and not a good fit for this hotfix
             WaveFormData.Factory(filePath)
           } catch (e: IOException) {
             callback.onError(e)
