@@ -15,6 +15,12 @@ jobs:
     name: Hushed-ADR
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout Pull Request
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.DAZZLER_GITHUB_TOKEN }}
+        submodules: 'recursive'
+        persist-credentials: false
     - name: Pull request steps
       if: github.event_name == 'pull_request'
       #timeout-minutes: 20
