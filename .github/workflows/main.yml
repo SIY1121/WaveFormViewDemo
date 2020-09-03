@@ -13,35 +13,21 @@ on:
 jobs:
   CICD:
     name: Hushed-ADR
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-    - name: free disk space
-      run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-        docker rmi $(docker image ls -aq)
-        df -h
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-    - name: Login to AWS ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
     - name: Pull request steps
       if: github.event_name == 'pull_request'
       #timeout-minutes: 20
       run: |
-          docker run -t --env github_event_name=pull_request 206332826436.dkr.ecr.us-east-1.amazonaws.com/hushed-client-adr:v0.2 /bin/sh -c "/CI/lib-waveform.sh" 
-          echo "******************************************************************************************************"
+          ./gradlew clean build
+          ./gradlew checkstyle
     - name: Push steps
       if: github.event_name == 'push'
+      env:
+        artifactory_user: ${{ secrets.ARTIFACTORY_USERNAME }}
+        artifactory_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        artifactory_url: "https://artifactory.testing.hushed.com/artifactory"
       run: |
-          docker run -t --env github_event_name=push 206332826436.dkr.ecr.us-east-1.amazonaws.com/hushed-client-adr:v0.2 /bin/sh -c "/CI/lib-waveform.sh"  
-          echo "******************************************************************************************************"
-    - name: Logout of AWS ECR
-      if: always()
-      run: docker logout ${{ steps.login-ecr.outputs.registry }}
+          ./gradlew clean build
+          ./gradlew checkstyle
+          ./gradlew artifactoryPublish -Partifactory_contextUrl=$artifactory_url -Partifactory_user=$artifactory_user -Partifactory_password=$artifactory_password
