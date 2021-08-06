@@ -10,7 +10,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Parcel
 import android.os.Parcelable
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
@@ -188,7 +188,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
         private fun MediaExtractor.getAudioTrackIndex(): Int {
             for (i in 0 until extractor.trackCount) {
                 // select audio track
-                if (extractor.getTrackFormat(i).getString(MediaFormat.KEY_MIME).contains("audio/")) {
+                if (extractor.getTrackFormat(i).getString(MediaFormat.KEY_MIME)!!.contains("audio/")) {
                     return i
                 }
             }
@@ -205,7 +205,7 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
         fun build(callback: Callback) {
             val handler = Handler()
             val format = extractor.getTrackFormat(audioTrackIndex)
-            val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME))
+            val codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME)!!)
             codec.configure(format, null, null, 0)
             val outFormat = codec.outputFormat
 
@@ -216,24 +216,30 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
             Log.i("WaveFormFactory", "Start building data.")
 
 
-            Thread({
+            Thread {
                 var EOS = false
                 val stream = ByteArrayOutputStream()
-                var info = MediaCodec.BufferInfo()
+                val info = MediaCodec.BufferInfo()
 
                 while (!EOS) {
                     val inputBufferId = codec.dequeueInputBuffer(10)
                     if (inputBufferId >= 0) {
                         val inputBuffer = codec.getInputBuffer(inputBufferId)
-                        val readSize = extractor.readSampleData(inputBuffer, 0)
+                        val readSize = extractor.readSampleData(inputBuffer!!, 0)
                         extractor.advance()
-                        codec.queueInputBuffer(inputBufferId, 0, if (readSize > 0) readSize else 0, extractor.sampleTime, if (readSize > 0) 0 else MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                        codec.queueInputBuffer(
+                            inputBufferId,
+                            0,
+                            if (readSize > 0) readSize else 0,
+                            extractor.sampleTime,
+                            if (readSize > 0) 0 else MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                        )
                     }
 
                     val outputBufferId = codec.dequeueOutputBuffer(info, 10)
                     if (outputBufferId >= 0) {
                         val outputBuffer = codec.getOutputBuffer(outputBufferId)
-                        val buffer = ByteArray(outputBuffer.remaining())
+                        val buffer = ByteArray(outputBuffer!!.remaining())
                         outputBuffer.get(buffer)
                         stream.write(buffer)
                         codec.releaseOutputBuffer(outputBufferId, false)
@@ -245,12 +251,21 @@ class WaveFormData private constructor(val sampleRate: Int, val channel: Int, va
                 }
                 codec.stop()
                 codec.release()
-                Log.i("WaveFormFactory", "Built data in " + (System.currentTimeMillis() - startTime) + "ms")
-                val data = WaveFormData(outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE), outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT), extractor.getTrackFormat(audioTrackIndex).getLong(MediaFormat.KEY_DURATION) / 1000, stream)
-                handler.post({
+                Log.i(
+                    "WaveFormFactory",
+                    "Built data in " + (System.currentTimeMillis() - startTime) + "ms"
+                )
+                val data = WaveFormData(
+                    outFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE),
+                    outFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT),
+                    extractor.getTrackFormat(audioTrackIndex)
+                        .getLong(MediaFormat.KEY_DURATION) / 1000,
+                    stream
+                )
+                handler.post {
                     callback.onComplete(data)
-                })
-            }).start()
+                }
+            }.start()
         }
     }
 
